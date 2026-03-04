@@ -209,7 +209,7 @@ const Index = () => {
       </section>
 
       {/* ─── Feature Cards ─── */}
-      <section className="py-28 relative">
+      <section id="predict" className="py-28 relative">
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
