@@ -29,7 +29,7 @@ const Footer = () => (
           <h4 className="font-display font-semibold text-foreground mb-3">Information</h4>
           <div className="flex flex-col gap-2">
             <Link to="/about" className="text-sm text-muted-foreground hover:text-foreground transition-colors">About</Link>
-            <Link to="/contact" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Contact & Disclaimer</Link>
+            
           </div>
         </div>
       </div>
