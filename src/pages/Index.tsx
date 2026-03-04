@@ -45,6 +45,15 @@ const features = [
     iconBg: "bg-medical-indigo/15 text-medical-indigo",
     link: "/cervical-cytology",
   },
+  {
+    icon: <Shield className="w-6 h-6" />,
+    title: "Cervical Clinical Risk",
+    description:
+      "Evidence-based cervical cancer risk assessment using patient demographics, HPV status, and clinical history.",
+    color: "from-rose-500/20 to-rose-500/5",
+    iconBg: "bg-rose-500/15 text-rose-500",
+    link: "/cervical-clinical",
+  },
 ];
 
 const workflow = [
@@ -221,7 +230,7 @@ const Index = () => {
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-6 lg:gap-8 max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 max-w-6xl mx-auto">
             {features.map((feature, i) => (
               <motion.div
                 key={feature.title}
