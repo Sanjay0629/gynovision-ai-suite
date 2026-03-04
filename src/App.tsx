@@ -11,7 +11,7 @@ import UterineMolecular from "./pages/UterineMolecular";
 import CervicalClinical from "./pages/CervicalClinical";
 import CervicalCytology from "./pages/CervicalCytology";
 import About from "./pages/About";
-import Contact from "./pages/Contact";
+
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,7 +30,7 @@ const App = () => (
           <Route path="/cervical-clinical" element={<CervicalClinical />} />
           <Route path="/cervical-cytology" element={<CervicalCytology />} />
           <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
+          
           <Route path="*" element={<NotFound />} />
         </Routes>
         <Footer />

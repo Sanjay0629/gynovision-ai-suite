@@ -10,7 +10,7 @@ const navLinks = [
   { to: "/cervical-clinical", label: "Cervical Clinical" },
   { to: "/cervical-cytology", label: "Cytology AI" },
   { to: "/about", label: "About" },
-  { to: "/contact", label: "Contact" },
+  
 ];
 
 const Navbar = () => {
