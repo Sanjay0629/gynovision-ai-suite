@@ -1,27 +1,297 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Activity, Loader2 } from "lucide-react";
+import { Activity, Loader2, AlertCircle, CheckCircle2, ChevronRight } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import GlassCard from "@/components/GlassCard";
-import RiskBadge from "@/components/RiskBadge";
-import ConfidenceBar from "@/components/ConfidenceBar";
 import DisclaimerBox from "@/components/DisclaimerBox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
+
+/* ------------------------------------------------------------------ */
+/*  Types                                                              */
+/* ------------------------------------------------------------------ */
+
+interface ShapFeature {
+  feature: string;
+  shap_value: number;
+  direction: string;
+}
+
+interface PredictionResponse {
+  prediction: number;
+  probability: number;
+  risk_tier: string;
+  risk_color: string;
+  threshold_used: { low_upper: number; high_lower: number };
+  shap_explanation: ShapFeature[];
+  clinical_recommendations: string[];
+  disclaimer: string;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Default form state                                                 */
+/* ------------------------------------------------------------------ */
+
+const initialFormData = {
+  Age: "",
+  BMI: "",
+  MenopauseStatus: "",
+  AbnormalBleeding: false,
+  PelvicPain: false,
+  VaginalDischarge: false,
+  UnexplainedWeightLoss: false,
+  ThickEndometrium: "",
+  CA125_Level: "",
+  Hypertension: false,
+  Diabetes: false,
+  FamilyHistoryCancer: false,
+  Smoking: false,
+  EstrogenTherapy: false,
+  HistologyType: "",
+  Parity: "",
+  Gravidity: "",
+  HormoneReceptorStatus: "",
+};
+
+/* ------------------------------------------------------------------ */
+/*  Sub-components                                                     */
+/* ------------------------------------------------------------------ */
+
+const SectionHeader = ({ title, count }: { title: string; count: number }) => (
+  <div className="flex items-center gap-2 pt-4 pb-2 border-b border-border/50">
+    <h4 className="text-sm font-semibold text-foreground">{title}</h4>
+    <span className="text-xs text-muted-foreground">({count} fields)</span>
+  </div>
+);
+
+const ToggleRow = ({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) => (
+  <div className="flex items-center justify-between py-2">
+    <Label className="text-sm text-foreground">{label}</Label>
+    <div className="flex items-center gap-2">
+      <span className="text-xs text-muted-foreground">{checked ? "Yes" : "No"}</span>
+      <Switch checked={checked} onCheckedChange={onChange} />
+    </div>
+  </div>
+);
+
+/* ------------------------------------------------------------------ */
+/*  Results panel                                                      */
+/* ------------------------------------------------------------------ */
+
+const ResultsPanel = ({
+  results,
+  loading,
+}: {
+  results: PredictionResponse | null;
+  loading: boolean;
+}) => {
+  if (loading) {
+    return (
+      <div className="text-center py-16">
+        <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-3" />
+        <p className="text-sm text-muted-foreground">Analyzing clinical data…</p>
+      </div>
+    );
+  }
+
+  if (!results) {
+    return (
+      <div className="text-center py-16 text-muted-foreground">
+        <Activity className="w-10 h-10 mx-auto mb-3 opacity-30" />
+        <p className="font-semibold text-foreground mb-1">Prediction Results</p>
+        <p className="text-sm">Submit the form to see risk assessment</p>
+      </div>
+    );
+  }
+
+  const pct = (results.probability * 100).toFixed(1);
+
+  const riskColorClass =
+    results.risk_tier === "High"
+      ? "bg-destructive/10 text-destructive border-destructive/30"
+      : results.risk_tier === "Moderate"
+      ? "bg-yellow-500/10 text-yellow-600 border-yellow-500/30"
+      : "bg-green-500/10 text-green-600 border-green-500/30";
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+      {/* Risk Tier + Probability */}
+      <div className="space-y-4">
+        <h4 className="text-sm font-semibold text-foreground">Risk Assessment</h4>
+
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">Risk Tier</span>
+          <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${riskColorClass}`}>
+            {results.risk_tier}
+          </span>
+        </div>
+
+        {/* Probability bar */}
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Probability Score</span>
+            <span className="font-semibold text-primary">{pct}%</span>
+          </div>
+          <div className="w-full h-2.5 rounded-full bg-muted overflow-hidden">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${pct}%` }}
+              transition={{ duration: 1, ease: "easeOut" }}
+              className="h-full rounded-full"
+              style={{ background: "var(--gradient-primary)" }}
+            />
+          </div>
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>0%</span>
+            <span>Low ≤ {(results.threshold_used.low_upper * 100).toFixed(0)}%</span>
+            <span>High ≥ {(results.threshold_used.high_lower * 100).toFixed(0)}%</span>
+            <span>100%</span>
+          </div>
+        </div>
+      </div>
+
+      {/* SHAP Explanation */}
+      {results.shap_explanation?.length > 0 && (
+        <div className="space-y-3">
+          <h4 className="text-sm font-semibold text-foreground">Key Contributing Factors</h4>
+          <p className="text-xs text-muted-foreground">
+            Top features influencing this prediction (SHAP values)
+          </p>
+          <div className="space-y-2">
+            {results.shap_explanation.map((f, i) => {
+              const maxAbs = Math.max(
+                ...results.shap_explanation.map((s) => Math.abs(s.shap_value))
+              );
+              const widthPct = Math.min((Math.abs(f.shap_value) / maxAbs) * 100, 100);
+              const isRisk = f.direction === "increases risk";
+              return (
+                <div key={i} className="space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-foreground">{f.feature.replace(/_/g, " ")}</span>
+                    <span className={isRisk ? "text-destructive" : "text-green-500"}>
+                      {isRisk ? "↑" : "↓"} {Math.abs(f.shap_value).toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${isRisk ? "bg-destructive/70" : "bg-green-500/70"}`}
+                      style={{ width: `${widthPct}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Clinical Recommendations */}
+      {results.clinical_recommendations?.length > 0 && (
+        <div className="space-y-3">
+          <h4 className="text-sm font-semibold text-foreground">Clinical Recommendations</h4>
+          <div className="space-y-2">
+            {results.clinical_recommendations.map((rec, i) => (
+              <div key={i} className="flex gap-2 items-start text-sm text-muted-foreground">
+                <ChevronRight className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                <span>{rec}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Disclaimer from response */}
+      {results.disclaimer && (
+        <div className="rounded-lg border border-border/50 bg-muted/30 p-3 flex gap-2 items-start">
+          <AlertCircle className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+          <p className="text-xs text-muted-foreground">{results.disclaimer}</p>
+        </div>
+      )}
+    </motion.div>
+  );
+};
+
+/* ------------------------------------------------------------------ */
+/*  Main page component                                                */
+/* ------------------------------------------------------------------ */
+
+const API_URL = "http://localhost:5007/predict/uterine";
 
 const UterineClinical = () => {
+  const [formData, setFormData] = useState(initialFormData);
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<null | { risk: "low" | "moderate" | "high"; probability: number; confidence: number }>(null);
+  const [results, setResults] = useState<PredictionResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const handlePredict = () => {
+  const setField = (key: keyof typeof initialFormData, value: string | boolean) =>
+    setFormData((prev) => ({ ...prev, [key]: value }));
+
+  const buildPayload = () => ({
+    Age: Number(formData.Age),
+    BMI: Number(formData.BMI),
+    MenopauseStatus: formData.MenopauseStatus,
+    AbnormalBleeding: formData.AbnormalBleeding ? "Yes" : "No",
+    PelvicPain: formData.PelvicPain ? "Yes" : "No",
+    VaginalDischarge: formData.VaginalDischarge ? "Yes" : "No",
+    UnexplainedWeightLoss: formData.UnexplainedWeightLoss ? "Yes" : "No",
+    ThickEndometrium: Number(formData.ThickEndometrium),
+    CA125_Level: Number(formData.CA125_Level),
+    Hypertension: formData.Hypertension ? "Yes" : "No",
+    Diabetes: formData.Diabetes ? "Yes" : "No",
+    FamilyHistoryCancer: formData.FamilyHistoryCancer ? "Yes" : "No",
+    Smoking: formData.Smoking ? "Yes" : "No",
+    EstrogenTherapy: formData.EstrogenTherapy ? "Yes" : "No",
+    HistologyType: formData.HistologyType,
+    Parity: Number(formData.Parity),
+    Gravidity: Number(formData.Gravidity),
+    HormoneReceptorStatus: formData.HormoneReceptorStatus,
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setResult({ risk: "moderate", probability: 67, confidence: 85 });
+    setError(null);
+    setResults(null);
+
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(buildPayload()),
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error || `Server returned ${res.status}`);
+      }
+
+      const data: PredictionResponse = await res.json();
+      setResults(data);
+    } catch (err: any) {
+      const msg = err.message || "Failed to reach the prediction server.";
+      setError(msg);
+      toast.error("Prediction failed", { description: msg });
+    } finally {
       setLoading(false);
-    }, 2000);
+    }
+  };
+
+  const handleReset = () => {
+    setFormData(initialFormData);
+    setResults(null);
+    setError(null);
   };
 
   return (
@@ -30,103 +300,131 @@ const UterineClinical = () => {
         <PageHeader
           icon={<Activity className="w-7 h-7 text-primary" />}
           title="Uterine Cancer – Clinical Prediction"
-          subtitle="AI-driven clinical risk assessment based on patient demographics, medical history, and diagnostic markers."
+          subtitle="Enter 18 clinical parameters to receive an AI-powered risk assessment with SHAP explanations and clinical recommendations."
         />
 
-        <div className="grid lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
+        <div className="grid lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
           {/* Input Form */}
           <GlassCard hover={false}>
-            <h3 className="font-display font-semibold text-lg text-foreground mb-6">Patient Information</h3>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <h3 className="font-display font-semibold text-lg text-foreground mb-4">
+              Patient Clinical Data
+            </h3>
+
+            <form onSubmit={handleSubmit} className="space-y-1">
+              {/* Demographics */}
+              <SectionHeader title="Demographics" count={3} />
+              <div className="grid grid-cols-2 gap-4 pt-2">
                 <div>
-                  <Label>Age</Label>
-                  <Input type="number" placeholder="e.g. 55" className="mt-1.5" />
+                  <Label>Age (years)</Label>
+                  <Input type="number" placeholder="e.g. 55" className="mt-1.5" value={formData.Age} onChange={(e) => setField("Age", e.target.value)} required />
                 </div>
                 <div>
-                  <Label>BMI</Label>
-                  <Input type="number" placeholder="e.g. 28.5" className="mt-1.5" />
+                  <Label>BMI (kg/m²)</Label>
+                  <Input type="number" step="0.1" placeholder="e.g. 28.5" className="mt-1.5" value={formData.BMI} onChange={(e) => setField("BMI", e.target.value)} required />
                 </div>
               </div>
-              <div>
-                <Label>Menopausal Status</Label>
-                <Select>
-                  <SelectTrigger className="mt-1.5">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
+              <div className="pt-2">
+                <Label>Menopause Status</Label>
+                <Select value={formData.MenopauseStatus} onValueChange={(v) => setField("MenopauseStatus", v)} required>
+                  <SelectTrigger className="mt-1.5"><SelectValue placeholder="Select status" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pre">Pre-menopausal</SelectItem>
-                    <SelectItem value="peri">Peri-menopausal</SelectItem>
-                    <SelectItem value="post">Post-menopausal</SelectItem>
+                    <SelectItem value="Premenopausal">Premenopausal</SelectItem>
+                    <SelectItem value="Perimenopausal">Perimenopausal</SelectItem>
+                    <SelectItem value="Postmenopausal">Postmenopausal</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label>Family History</Label>
-                <Select>
-                  <SelectTrigger className="mt-1.5">
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
+
+              {/* Symptoms */}
+              <SectionHeader title="Symptoms" count={4} />
+              <div className="pt-1">
+                <ToggleRow label="Abnormal Bleeding" checked={formData.AbnormalBleeding} onChange={(v) => setField("AbnormalBleeding", v)} />
+                <ToggleRow label="Pelvic Pain" checked={formData.PelvicPain} onChange={(v) => setField("PelvicPain", v)} />
+                <ToggleRow label="Vaginal Discharge" checked={formData.VaginalDischarge} onChange={(v) => setField("VaginalDischarge", v)} />
+                <ToggleRow label="Unexplained Weight Loss" checked={formData.UnexplainedWeightLoss} onChange={(v) => setField("UnexplainedWeightLoss", v)} />
+              </div>
+
+              {/* Clinical Measurements */}
+              <SectionHeader title="Clinical Measurements" count={2} />
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <div>
+                  <Label>Endometrial Thickness (mm)</Label>
+                  <Input type="number" step="0.1" placeholder="e.g. 12" className="mt-1.5" value={formData.ThickEndometrium} onChange={(e) => setField("ThickEndometrium", e.target.value)} required />
+                </div>
+                <div>
+                  <Label>CA-125 Level (U/mL)</Label>
+                  <Input type="number" step="0.1" placeholder="e.g. 35" className="mt-1.5" value={formData.CA125_Level} onChange={(e) => setField("CA125_Level", e.target.value)} required />
+                </div>
+              </div>
+
+              {/* Medical History */}
+              <SectionHeader title="Medical History" count={5} />
+              <div className="pt-1">
+                <ToggleRow label="Hypertension" checked={formData.Hypertension} onChange={(v) => setField("Hypertension", v)} />
+                <ToggleRow label="Diabetes" checked={formData.Diabetes} onChange={(v) => setField("Diabetes", v)} />
+                <ToggleRow label="Family History of Cancer" checked={formData.FamilyHistoryCancer} onChange={(v) => setField("FamilyHistoryCancer", v)} />
+                <ToggleRow label="Smoking" checked={formData.Smoking} onChange={(v) => setField("Smoking", v)} />
+                <ToggleRow label="Estrogen Therapy" checked={formData.EstrogenTherapy} onChange={(v) => setField("EstrogenTherapy", v)} />
+              </div>
+
+              {/* Pathology / Reproductive */}
+              <SectionHeader title="Pathology & Reproductive" count={4} />
+              <div className="pt-2">
+                <Label>Histology Type</Label>
+                <Select value={formData.HistologyType} onValueChange={(v) => setField("HistologyType", v)} required>
+                  <SelectTrigger className="mt-1.5"><SelectValue placeholder="Select type" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="yes">Yes</SelectItem>
-                    <SelectItem value="no">No</SelectItem>
+                    <SelectItem value="Normal">Normal</SelectItem>
+                    <SelectItem value="Endometrioid">Endometrioid</SelectItem>
+                    <SelectItem value="Serous">Serous</SelectItem>
+                    <SelectItem value="Clear Cell">Clear Cell</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label>Abnormal Bleeding</Label>
-                <Select>
-                  <SelectTrigger className="mt-1.5">
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <div>
+                  <Label>Parity (live births)</Label>
+                  <Input type="number" placeholder="e.g. 2" className="mt-1.5" value={formData.Parity} onChange={(e) => setField("Parity", e.target.value)} required />
+                </div>
+                <div>
+                  <Label>Gravidity (pregnancies)</Label>
+                  <Input type="number" placeholder="e.g. 3" className="mt-1.5" value={formData.Gravidity} onChange={(e) => setField("Gravidity", e.target.value)} required />
+                </div>
+              </div>
+              <div className="pt-2">
+                <Label>Hormone Receptor Status</Label>
+                <Select value={formData.HormoneReceptorStatus} onValueChange={(v) => setField("HormoneReceptorStatus", v)} required>
+                  <SelectTrigger className="mt-1.5"><SelectValue placeholder="Select status" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="yes">Yes</SelectItem>
-                    <SelectItem value="no">No</SelectItem>
+                    <SelectItem value="Positive">Positive</SelectItem>
+                    <SelectItem value="Negative">Negative</SelectItem>
+                    <SelectItem value="Unknown">Unknown</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <Button
-                onClick={handlePredict}
-                disabled={loading}
-                className="w-full mt-2"
-                style={{ background: "var(--gradient-primary)" }}
-              >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                {loading ? "Analyzing..." : "Predict Risk"}
-              </Button>
-            </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-6">
+                <Button type="submit" disabled={loading} className="flex-1" style={{ background: "var(--gradient-primary)" }}>
+                  {loading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Predicting…</> : "Predict Risk"}
+                </Button>
+                <Button type="button" variant="outline" onClick={handleReset}>Reset</Button>
+              </div>
+
+              {error && (
+                <div className="mt-3 p-3 rounded-lg border border-destructive/30 bg-destructive/5 flex gap-2 items-center text-sm text-destructive">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  {error}
+                </div>
+              )}
+            </form>
           </GlassCard>
 
-          {/* Output */}
+          {/* Results */}
           <div className="space-y-6">
             <GlassCard hover={false}>
-              <h3 className="font-display font-semibold text-lg text-foreground mb-6">Prediction Results</h3>
-              {!result && !loading && (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Activity className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                  <p className="text-sm">Submit patient data to generate risk prediction</p>
-                </div>
-              )}
-              {loading && (
-                <div className="text-center py-12">
-                  <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-3" />
-                  <p className="text-sm text-muted-foreground">Processing clinical data...</p>
-                </div>
-              )}
-              {result && !loading && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="space-y-6"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Risk Category</span>
-                    <RiskBadge level={result.risk} />
-                  </div>
-                  <ConfidenceBar value={result.probability} label="Risk Probability" />
-                  <ConfidenceBar value={result.confidence} label="Model Confidence" />
-                </motion.div>
-              )}
+              <ResultsPanel results={results} loading={loading} />
             </GlassCard>
             <DisclaimerBox />
           </div>
