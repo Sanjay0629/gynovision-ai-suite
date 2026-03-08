@@ -252,6 +252,7 @@ const CervicalCytology = () => {
                 ref={fileRef}
                 type="file"
                 accept=".jpg,.jpeg,.png,.bmp"
+                aria-label="Upload Pap smear image"
                 className="hidden"
                 onChange={handleFile}
               />
