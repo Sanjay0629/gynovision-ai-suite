@@ -139,7 +139,7 @@ const Index = () => {
               className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-6 leading-[1.05] tracking-tight"
             >
               <span className="text-foreground">Gyno</span>
-              <span className="text-medical-indigo">Vision</span>
+              <span style={{ color: "hsl(230 65% 55%)" }}>Vision</span>
               <span className="text-foreground"> AI</span>
             </motion.h1>
 
