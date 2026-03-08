@@ -316,17 +316,17 @@ const UterineClinical = () => {
               <div className="grid grid-cols-2 gap-4 pt-2">
                 <div>
                   <Label>Age (years)</Label>
-                  <Input type="number" placeholder="e.g. 55" className="mt-1.5" value={formData.Age} onChange={(e) => setField("Age", e.target.value)} required />
+                  <Input type="number" placeholder="e.g. 62" className="mt-1.5" value={formData.Age} onChange={(e) => setField("Age", e.target.value)} required />
                 </div>
                 <div>
                   <Label>BMI (kg/m²)</Label>
-                  <Input type="number" step="0.1" placeholder="e.g. 28.5" className="mt-1.5" value={formData.BMI} onChange={(e) => setField("BMI", e.target.value)} required />
+                  <Input type="number" step="0.1" placeholder="e.g. 31.5" className="mt-1.5" value={formData.BMI} onChange={(e) => setField("BMI", e.target.value)} required />
                 </div>
               </div>
               <div className="pt-2">
                 <Label>Menopause Status</Label>
                 <Select value={formData.MenopauseStatus} onValueChange={(v) => setField("MenopauseStatus", v)} required>
-                  <SelectTrigger className="mt-1.5"><SelectValue placeholder="Select status" /></SelectTrigger>
+                  <SelectTrigger className="mt-1.5"><SelectValue placeholder="Select" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Premenopausal">Premenopausal</SelectItem>
                     <SelectItem value="Perimenopausal">Perimenopausal</SelectItem>
@@ -349,11 +349,11 @@ const UterineClinical = () => {
               <div className="grid grid-cols-2 gap-4 pt-2">
                 <div>
                   <Label>Endometrial Thickness (mm)</Label>
-                  <Input type="number" step="0.1" placeholder="e.g. 12" className="mt-1.5" value={formData.ThickEndometrium} onChange={(e) => setField("ThickEndometrium", e.target.value)} required />
+                  <Input type="number" step="0.1" placeholder="e.g. 18.5" className="mt-1.5" value={formData.ThickEndometrium} onChange={(e) => setField("ThickEndometrium", e.target.value)} required />
                 </div>
                 <div>
                   <Label>CA-125 Level (U/mL)</Label>
-                  <Input type="number" step="0.1" placeholder="e.g. 35" className="mt-1.5" value={formData.CA125_Level} onChange={(e) => setField("CA125_Level", e.target.value)} required />
+                  <Input type="number" step="0.1" placeholder="e.g. 65.3" className="mt-1.5" value={formData.CA125_Level} onChange={(e) => setField("CA125_Level", e.target.value)} required />
                 </div>
               </div>
 
