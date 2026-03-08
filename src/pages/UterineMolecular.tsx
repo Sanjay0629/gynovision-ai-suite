@@ -157,7 +157,7 @@ const UterineMolecular = () => {
                   <Input
                     type="number"
                     name="mutation_count"
-                    placeholder="e.g. 150"
+                    placeholder="e.g. 65"
                     value={formData.mutation_count}
                     onChange={handleChange}
                     className="mt-1.5"
@@ -169,7 +169,7 @@ const UterineMolecular = () => {
                   <Input
                     type="number"
                     name="fraction_genome_altered"
-                    placeholder="e.g. 0.12"
+                    placeholder="e.g. 0.3311"
                     step="0.01"
                     value={formData.fraction_genome_altered}
                     onChange={handleChange}
@@ -182,7 +182,7 @@ const UterineMolecular = () => {
                   <Input
                     type="number"
                     name="msi_mantis_score"
-                    placeholder="e.g. 0.45"
+                    placeholder="e.g. 0.3234"
                     step="0.01"
                     value={formData.msi_mantis_score}
                     onChange={handleChange}
@@ -195,7 +195,7 @@ const UterineMolecular = () => {
                   <Input
                     type="number"
                     name="msisensor_score"
-                    placeholder="e.g. 3.2"
+                    placeholder="e.g. 0.85"
                     step="0.01"
                     value={formData.msisensor_score}
                     onChange={handleChange}
@@ -219,7 +219,7 @@ const UterineMolecular = () => {
                   <Input
                     type="number"
                     name="diagnosis_age"
-                    placeholder="e.g. 62"
+                    placeholder="e.g. 59"
                     value={formData.diagnosis_age}
                     onChange={handleChange}
                     className="mt-1.5"
