@@ -52,7 +52,7 @@ const Navbar = () => {
             <Brain className="w-5 h-5 text-primary-foreground" />
           </div>
           <span className="font-display font-bold text-lg text-foreground">
-            Gyno<span className="gradient-text">Vision</span> AI
+            Gyno<span className="text-medical-indigo">Vision</span> AI
           </span>
         </Link>
 
