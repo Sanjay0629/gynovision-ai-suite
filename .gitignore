@@ -1,24 +1,113 @@
+# ────────────────────────────────────────────
+# Node / Frontend (Vite + React + TypeScript)
+# ────────────────────────────────────────────
+node_modules/
+dist/
+dist-ssr/
+*.local
+.cache/
+
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+bun-error.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# TypeScript build info
+*.tsbuildinfo
 
-# Editor directories and files
+# ────────────────────────────────────────────
+# Python / Flask Backends
+# ────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.env/
+
+# Python packaging
+*.egg
+*.egg-info/
+dist/
+build/
+wheels/
+*.whl
+pip-log.txt
+pip_error.txt
+
+# Pytest / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+*.cover
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# ────────────────────────────────────────────
+# ML Model Artifacts (large binary files)
+# ────────────────────────────────────────────
+*.pkl
+*.joblib
+*.h5
+*.hdf5
+*.pt
+*.pth
+*.onnx
+*.pb
+*.tflite
+*.safetensors
+
+# Keep thresholds/config JSON that are small and tracked
+!backend/**/thresholds.json
+!backend/**/*_thresholds.json
+
+# ────────────────────────────────────────────
+# Environment & Secrets
+# ────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.json
+
+# ────────────────────────────────────────────
+# OS / Editor
+# ────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+.idea/
 .vscode/*
 !.vscode/extensions.json
-.idea
-.DS_Store
+!.vscode/settings.json
+!.vscode/launch.json
+
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+*.swp
+
+# ────────────────────────────────────────────
+# Misc
+# ────────────────────────────────────────────
+*.tmp
+*.bak
+*.orig
+
