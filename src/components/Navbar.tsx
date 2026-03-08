@@ -15,10 +15,11 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [dark, setDark] = useState(() => {
     if (typeof window !== "undefined") {
-      return document.documentElement.classList.contains("dark") ||
-        localStorage.getItem("gynovision-theme") === "dark";
+      const saved = localStorage.getItem("gynovision-theme");
+      if (saved) return saved === "dark";
+      return true; // default to dark
     }
-    return false;
+    return true;
   });
 
   useEffect(() => {
