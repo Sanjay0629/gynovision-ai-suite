@@ -4,6 +4,7 @@ import { Microscope, Loader2, Eye, TrendingUp, Upload } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import GlassCard from "@/components/GlassCard";
 import DisclaimerBox from "@/components/DisclaimerBox";
+import ClinicalRecommendation from "@/components/ClinicalRecommendation";
 import { Button } from "@/components/ui/button";
 
 /* ------------------------------------------------------------------ */
