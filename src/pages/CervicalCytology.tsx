@@ -45,7 +45,7 @@ const CervicalCytology = () => {
   const [error, setError] = useState<string | null>(null);
   const [patientName, setPatientName] = useState("");
   const [patientId, setPatientId] = useState("");
-  const [patientDob, setPatientDob] = useState("");
+  const [patientAge, setPatientAge] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -205,7 +205,7 @@ const CervicalCytology = () => {
                 gradcamImage: results.gradcam,
                 patientName: patientName || undefined,
                 patientId: patientId || undefined,
-                patientDob: patientDob || undefined,
+                patientAge: patientAge || undefined,
               })
             }
           >
@@ -278,11 +278,14 @@ const CervicalCytology = () => {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Date of Birth</label>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Age</label>
                   <input
-                    type="date"
-                    value={patientDob}
-                    onChange={(e) => setPatientDob(e.target.value)}
+                    type="number"
+                    value={patientAge}
+                    onChange={(e) => setPatientAge(e.target.value)}
+                    placeholder="35"
+                    min="0"
+                    max="150"
                     className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                   />
                 </div>

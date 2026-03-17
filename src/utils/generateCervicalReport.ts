@@ -8,7 +8,7 @@ interface ReportData {
   gradcamImage?: string;    // base64 string (no prefix)
   patientName?: string;
   patientId?: string;
-  patientDob?: string;
+  patientAge?: string;
 }
 
 const RECOMMENDATIONS: Record<string, { interpretation: string; riskLevel: string; actions: string[] }> = {
@@ -122,7 +122,7 @@ export function generateCervicalReport(data: ReportData) {
   y += 8;
 
   // ── Patient Information ──
-  if (data.patientName || data.patientId || data.patientDob) {
+  if (data.patientName || data.patientId || data.patientAge) {
     doc.setFillColor(...COLORS.bgLight);
     doc.roundedRect(margin, y, contentWidth, 22, 2, 2, "F");
     doc.setFontSize(8);
@@ -149,9 +149,9 @@ export function generateCervicalReport(data: ReportData) {
     doc.text(data.patientId || "N/A", col2 + 28, infoY);
 
     doc.setFont("helvetica", "bold");
-    doc.text("DOB:", col3, infoY);
+    doc.text("Age:", col3, infoY);
     doc.setFont("helvetica", "normal");
-    doc.text(data.patientDob || "N/A", col3 + 16, infoY);
+    doc.text(data.patientAge ? `${data.patientAge} years` : "N/A", col3 + 14, infoY);
 
     y += 28;
   }
