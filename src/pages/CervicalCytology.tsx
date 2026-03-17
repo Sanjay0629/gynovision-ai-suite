@@ -205,7 +205,7 @@ const CervicalCytology = () => {
                 gradcamImage: results.gradcam,
                 patientName: patientName || undefined,
                 patientId: patientId || undefined,
-                patientDob: patientDob || undefined,
+                patientAge: patientAge || undefined,
               })
             }
           >
