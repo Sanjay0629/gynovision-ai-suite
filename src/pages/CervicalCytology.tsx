@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Microscope, Loader2, Eye, TrendingUp, Upload } from "lucide-react";
+import { Microscope, Loader2, Eye, TrendingUp, Upload, Download } from "lucide-react";
+import { generateCervicalReport } from "@/utils/generateCervicalReport";
 import PageHeader from "@/components/PageHeader";
 import GlassCard from "@/components/GlassCard";
 import DisclaimerBox from "@/components/DisclaimerBox";
@@ -181,11 +182,27 @@ const CervicalCytology = () => {
           </div>
         </div>
 
-        {/* Interpretation */}
-        <div className="rounded-lg border border-border/50 bg-muted/30 p-3 text-xs text-muted-foreground">
-          Predicted cell class: <strong>{results.prediction}</strong>.
-          Confidence: <strong>{(results.confidence * 100).toFixed(1)}%</strong>.
-          Clinical correlation is recommended.
+        {/* Interpretation + Download */}
+        <div className="flex items-center justify-between rounded-lg border border-border/50 bg-muted/30 p-3">
+          <p className="text-xs text-muted-foreground">
+            Predicted cell class: <strong>{results.prediction}</strong>.
+            Confidence: <strong>{(results.confidence * 100).toFixed(1)}%</strong>.
+            Clinical correlation is recommended.
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="ml-3 shrink-0"
+            onClick={() =>
+              generateCervicalReport({
+                prediction: results.prediction,
+                confidence: results.confidence,
+                classProbabilities: results.class_probabilities,
+              })
+            }
+          >
+            <Download className="w-3.5 h-3.5 mr-1.5" /> PDF Report
+          </Button>
         </div>
 
         {/* Grad-CAM heatmap */}
