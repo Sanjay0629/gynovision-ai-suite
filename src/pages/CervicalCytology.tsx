@@ -203,6 +203,9 @@ const CervicalCytology = () => {
                 classProbabilities: results.class_probabilities,
                 originalImage: preview ?? undefined,
                 gradcamImage: results.gradcam,
+                patientName: patientName || undefined,
+                patientId: patientId || undefined,
+                patientDob: patientDob || undefined,
               })
             }
           >

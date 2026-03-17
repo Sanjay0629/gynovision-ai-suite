@@ -119,7 +119,42 @@ export function generateCervicalReport(data: ReportData) {
   doc.setFontSize(8);
   doc.setTextColor(...COLORS.muted);
   doc.text(`Report Date: ${dateStr}  |  Time: ${timeStr}  |  Report ID: CYT-${Date.now().toString(36).toUpperCase()}`, margin, y);
-  y += 6;
+  y += 8;
+
+  // ── Patient Information ──
+  if (data.patientName || data.patientId || data.patientDob) {
+    doc.setFillColor(...COLORS.bgLight);
+    doc.roundedRect(margin, y, contentWidth, 22, 2, 2, "F");
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...COLORS.primary);
+    doc.text("PATIENT INFORMATION", margin + 6, y + 6);
+
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...COLORS.body);
+    doc.setFontSize(8);
+    const col1 = margin + 6;
+    const col2 = margin + contentWidth * 0.38;
+    const col3 = margin + contentWidth * 0.7;
+    const infoY = y + 14;
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Name:", col1, infoY);
+    doc.setFont("helvetica", "normal");
+    doc.text(data.patientName || "N/A", col1 + 20, infoY);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Patient ID:", col2, infoY);
+    doc.setFont("helvetica", "normal");
+    doc.text(data.patientId || "N/A", col2 + 28, infoY);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("DOB:", col3, infoY);
+    doc.setFont("helvetica", "normal");
+    doc.text(data.patientDob || "N/A", col3 + 16, infoY);
+
+    y += 28;
+  }
 
   // Header divider
   doc.setDrawColor(...COLORS.primary);
