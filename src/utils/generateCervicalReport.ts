@@ -4,6 +4,8 @@ interface ReportData {
   prediction: string;
   confidence: number;
   classProbabilities: Record<string, number>;
+  originalImage?: string;   // base64 data URL
+  gradcamImage?: string;    // base64 string (no prefix)
 }
 
 const RECOMMENDATIONS: Record<string, { interpretation: string; riskLevel: string; actions: string[] }> = {
@@ -183,6 +185,72 @@ export function generateCervicalReport(data: ReportData) {
   doc.text(`${(data.confidence * 100).toFixed(1)}%`, pageWidth - margin - 50, y + 19);
 
   y += boxH + 10;
+
+  // ── Image Evidence ──
+  if (data.originalImage || data.gradcamImage) {
+    sectionTitle("Image Evidence");
+
+    const imgWidth = (contentWidth - 8) / 2;
+    const imgHeight = imgWidth * 0.75;
+
+    // Check if images fit on current page
+    if (y + imgHeight + 20 > pageHeight) {
+      doc.addPage();
+      doc.setFillColor(...COLORS.white);
+      doc.rect(0, 0, pageWidth, pageHeight, "F");
+      y = 20;
+      sectionTitle("Image Evidence");
+    }
+
+    const imgY = y;
+
+    if (data.originalImage) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(...COLORS.muted);
+      doc.text("Original Pap Smear Image", margin + 2, imgY);
+
+      doc.setDrawColor(...COLORS.border);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(margin, imgY + 3, imgWidth, imgHeight, 2, 2, "S");
+
+      try {
+        doc.addImage(data.originalImage, "JPEG", margin + 1, imgY + 4, imgWidth - 2, imgHeight - 2);
+      } catch {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(...COLORS.muted);
+        doc.text("Image could not be embedded", margin + 4, imgY + imgHeight / 2);
+      }
+    }
+
+    if (data.gradcamImage) {
+      const gradX = margin + imgWidth + 8;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(...COLORS.muted);
+      doc.text("Grad-CAM Visualization", gradX + 2, imgY);
+
+      doc.setDrawColor(...COLORS.border);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(gradX, imgY + 3, imgWidth, imgHeight, 2, 2, "S");
+
+      try {
+        const gradSrc = data.gradcamImage.startsWith("data:")
+          ? data.gradcamImage
+          : `data:image/png;base64,${data.gradcamImage}`;
+        doc.addImage(gradSrc, "PNG", gradX + 1, imgY + 4, imgWidth - 2, imgHeight - 2);
+      } catch {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(...COLORS.muted);
+        doc.text("Image could not be embedded", gradX + 4, imgY + imgHeight / 2);
+      }
+    }
+
+    y = imgY + imgHeight + 12;
+    thinDivider();
+  }
 
   // ── Class Probabilities ──
   sectionTitle("Class Probabilities");
