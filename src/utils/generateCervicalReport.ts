@@ -6,6 +6,9 @@ interface ReportData {
   classProbabilities: Record<string, number>;
   originalImage?: string;   // base64 data URL
   gradcamImage?: string;    // base64 string (no prefix)
+  patientName?: string;
+  patientId?: string;
+  patientDob?: string;
 }
 
 const RECOMMENDATIONS: Record<string, { interpretation: string; riskLevel: string; actions: string[] }> = {
