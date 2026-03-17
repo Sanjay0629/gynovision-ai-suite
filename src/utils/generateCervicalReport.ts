@@ -8,7 +8,7 @@ interface ReportData {
   gradcamImage?: string;    // base64 string (no prefix)
   patientName?: string;
   patientId?: string;
-  patientDob?: string;
+  patientAge?: string;
 }
 
 const RECOMMENDATIONS: Record<string, { interpretation: string; riskLevel: string; actions: string[] }> = {
