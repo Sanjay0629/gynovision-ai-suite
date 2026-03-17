@@ -43,6 +43,9 @@ const CervicalCytology = () => {
   const [results, setResults] = useState<ClassificationResult | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [patientName, setPatientName] = useState("");
+  const [patientId, setPatientId] = useState("");
+  const [patientDob, setPatientDob] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -200,6 +203,9 @@ const CervicalCytology = () => {
                 classProbabilities: results.class_probabilities,
                 originalImage: preview ?? undefined,
                 gradcamImage: results.gradcam,
+                patientName: patientName || undefined,
+                patientId: patientId || undefined,
+                patientDob: patientDob || undefined,
               })
             }
           >
@@ -247,7 +253,40 @@ const CervicalCytology = () => {
           {/* Upload Form */}
           <div className="space-y-6">
             <GlassCard hover={false}>
-              <h3 className="font-display font-semibold text-lg text-foreground mb-6">Image Upload</h3>
+              <h3 className="font-display font-semibold text-lg text-foreground mb-6">Patient & Image Upload</h3>
+
+              {/* Patient Info Fields */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Patient Name</label>
+                  <input
+                    type="text"
+                    value={patientName}
+                    onChange={(e) => setPatientName(e.target.value)}
+                    placeholder="Jane Doe"
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Patient ID</label>
+                  <input
+                    type="text"
+                    value={patientId}
+                    onChange={(e) => setPatientId(e.target.value)}
+                    placeholder="PAT-00123"
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Date of Birth</label>
+                  <input
+                    type="date"
+                    value={patientDob}
+                    onChange={(e) => setPatientDob(e.target.value)}
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                </div>
+              </div>
 
               <form onSubmit={handleSubmit}>
                 <div
