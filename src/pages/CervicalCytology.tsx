@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Microscope, Loader2, Eye, TrendingUp, Upload } from "lucide-react";
+import { Microscope, Loader2, Eye, TrendingUp, Upload, Download } from "lucide-react";
+import { generateCervicalReport } from "@/utils/generateCervicalReport";
 import PageHeader from "@/components/PageHeader";
 import GlassCard from "@/components/GlassCard";
 import DisclaimerBox from "@/components/DisclaimerBox";
