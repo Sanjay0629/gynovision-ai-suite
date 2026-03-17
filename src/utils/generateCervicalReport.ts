@@ -296,6 +296,15 @@ export function generateCervicalReport(data: ReportData) {
   // ── Clinical Recommendation ──
   const rec = RECOMMENDATIONS[data.prediction];
   if (rec) {
+    // Estimate space needed for clinical recommendation section
+    const estimatedRecHeight = 60 + rec.actions.length * 12;
+    if (y + estimatedRecHeight > pageHeight - 30) {
+      doc.addPage();
+      doc.setFillColor(...COLORS.white);
+      doc.rect(0, 0, pageWidth, pageHeight, "F");
+      y = 20;
+    }
+
     sectionTitle("Clinical Recommendation");
 
     // Risk level badge
@@ -327,6 +336,14 @@ export function generateCervicalReport(data: ReportData) {
     y += 6;
 
     for (const action of rec.actions) {
+      // Check if we need a new page for each action
+      if (y + 10 > pageHeight - 30) {
+        doc.addPage();
+        doc.setFillColor(...COLORS.white);
+        doc.rect(0, 0, pageWidth, pageHeight, "F");
+        y = 20;
+      }
+
       doc.setFillColor(...COLORS.primary);
       doc.circle(margin + 5, y - 1.2, 1.2, "F");
 
