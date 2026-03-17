@@ -198,6 +198,8 @@ const CervicalCytology = () => {
                 prediction: results.prediction,
                 confidence: results.confidence,
                 classProbabilities: results.class_probabilities,
+                originalImage: preview ?? undefined,
+                gradcamImage: results.gradcam,
               })
             }
           >
