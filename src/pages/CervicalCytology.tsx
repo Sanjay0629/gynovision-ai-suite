@@ -4,6 +4,7 @@ import { Microscope, Loader2, Eye, TrendingUp, Upload } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import GlassCard from "@/components/GlassCard";
 import DisclaimerBox from "@/components/DisclaimerBox";
+import ClinicalRecommendation from "@/components/ClinicalRecommendation";
 import { Button } from "@/components/ui/button";
 
 /* ------------------------------------------------------------------ */
@@ -225,54 +226,59 @@ const CervicalCytology = () => {
 
         <div className="grid lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
           {/* Upload Form */}
-          <GlassCard hover={false}>
-            <h3 className="font-display font-semibold text-lg text-foreground mb-6">Image Upload</h3>
+          <div className="space-y-6">
+            <GlassCard hover={false}>
+              <h3 className="font-display font-semibold text-lg text-foreground mb-6">Image Upload</h3>
 
-            <form onSubmit={handleSubmit}>
-              <div
-                onClick={() => fileRef.current?.click()}
-                className="border-2 border-dashed border-border rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-colors min-h-[200px]"
-              >
-                {preview ? (
-                  <img src={preview} alt="Preview" className="max-h-48 rounded-xl" />
-                ) : (
-                  <>
-                    <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
-                      <Upload className="w-6 h-6 text-primary" />
-                    </div>
-                    <p className="text-sm font-medium text-foreground mb-1">
-                      Click to upload Pap smear image
-                    </p>
-                    <p className="text-xs text-muted-foreground">Accepts .jpg, .png, .bmp</p>
-                  </>
-                )}
-              </div>
-
-              <input
-                ref={fileRef}
-                type="file"
-                accept=".jpg,.jpeg,.png,.bmp"
-                aria-label="Upload Pap smear image"
-                className="hidden"
-                onChange={handleFile}
-              />
-
-              <Button
-                type="submit"
-                disabled={!preview || loading}
-                className="w-full mt-6"
-                style={{ background: "var(--gradient-primary)" }}
-              >
-                {loading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Classifying…</> : "Classify Image"}
-              </Button>
-
-              {error && (
-                <div className="mt-3 p-3 rounded-lg border border-destructive/30 bg-destructive/5 text-sm text-destructive">
-                  {error}
+              <form onSubmit={handleSubmit}>
+                <div
+                  onClick={() => fileRef.current?.click()}
+                  className="border-2 border-dashed border-border rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-colors min-h-[200px]"
+                >
+                  {preview ? (
+                    <img src={preview} alt="Preview" className="max-h-48 rounded-xl" />
+                  ) : (
+                    <>
+                      <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
+                        <Upload className="w-6 h-6 text-primary" />
+                      </div>
+                      <p className="text-sm font-medium text-foreground mb-1">
+                        Click to upload Pap smear image
+                      </p>
+                      <p className="text-xs text-muted-foreground">Accepts .jpg, .png, .bmp</p>
+                    </>
+                  )}
                 </div>
-              )}
-            </form>
-          </GlassCard>
+
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.bmp"
+                  aria-label="Upload Pap smear image"
+                  className="hidden"
+                  onChange={handleFile}
+                />
+
+                <Button
+                  type="submit"
+                  disabled={!preview || loading}
+                  className="w-full mt-6"
+                  style={{ background: "var(--gradient-primary)" }}
+                >
+                  {loading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Classifying…</> : "Classify Image"}
+                </Button>
+
+                {error && (
+                  <div className="mt-3 p-3 rounded-lg border border-destructive/30 bg-destructive/5 text-sm text-destructive">
+                    {error}
+                  </div>
+                )}
+              </form>
+            </GlassCard>
+
+            {/* Clinical Recommendation below upload */}
+            {results && <ClinicalRecommendation prediction={results.prediction} />}
+          </div>
 
           {/* Results */}
           <div className="space-y-6">
