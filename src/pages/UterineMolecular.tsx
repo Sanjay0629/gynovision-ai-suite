@@ -111,6 +111,7 @@ const UterineMolecular = () => {
 
       const data: PredictionResponse = await res.json();
       setResults(data);
+      window.scrollTo({ top: 0, behavior: "smooth" });
       toast.success("Prediction generated successfully!");
     } catch (err: any) {
       const msg = err.message || "Failed to reach the prediction server.";
