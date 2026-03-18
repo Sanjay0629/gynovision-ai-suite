@@ -293,6 +293,19 @@ const UterineClinical = () => {
     }
   };
 
+  const handleDownloadPDF = () => {
+    if (!results) return;
+    generateUterineReport({
+      ...results,
+      patientName,
+      patientId,
+      patientAge,
+      referringPhysician,
+      clinicalInputs: buildPayload(),
+    });
+    toast.success("PDF report downloaded");
+  };
+
   const handleReset = () => {
     setFormData(initialFormData);
     setResults(null);
