@@ -329,11 +329,32 @@ const UterineClinical = () => {
             </h3>
 
             <form onSubmit={handleSubmit} className="space-y-1">
+              {/* Patient Information */}
+              <SectionHeader title="Patient Information" count={4} />
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <div>
+                  <Label>Patient Name</Label>
+                  <Input placeholder="Full name" className="mt-1.5" value={patientName} onChange={(e) => setPatientName(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Patient ID</Label>
+                  <Input placeholder="e.g. UT-00123" className="mt-1.5" value={patientId} onChange={(e) => setPatientId(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Age (years)</Label>
+                  <Input type="number" min="0" max="150" placeholder="e.g. 55" className="mt-1.5" value={patientAge} onChange={(e) => setPatientAge(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Referring Physician</Label>
+                  <Input placeholder="Dr. Name" className="mt-1.5" value={referringPhysician} onChange={(e) => setReferringPhysician(e.target.value)} />
+                </div>
+              </div>
+
               {/* Demographics */}
               <SectionHeader title="Demographics" count={3} />
               <div className="grid grid-cols-2 gap-4 pt-2">
                 <div>
-                  <Label>Age (years)</Label>
+                  <Label>Age (clinical input)</Label>
                   <Input type="number" placeholder="e.g. 62" className="mt-1.5" value={formData.Age} onChange={(e) => setField("Age", e.target.value)} required />
                 </div>
                 <div>
