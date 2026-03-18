@@ -309,6 +309,9 @@ const UterineClinical = () => {
     setFormData(initialFormData);
     setResults(null);
     setError(null);
+    setPatientName("");
+    setPatientId("");
+    setPatientAge("");
   };
 
   return (
