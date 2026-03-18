@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Activity, Loader2, AlertCircle, CheckCircle2, ChevronRight } from "lucide-react";
+import { Activity, Loader2, AlertCircle, CheckCircle2, ChevronRight, Download } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import GlassCard from "@/components/GlassCard";
 import DisclaimerBox from "@/components/DisclaimerBox";
@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { generateUterineReport } from "@/utils/generateUterineReport";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
