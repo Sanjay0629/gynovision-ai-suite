@@ -307,7 +307,7 @@ const UterineMolecular = () => {
                   type="submit"
                   disabled={loading}
                   className="flex-1"
-                  style={{ background: "var(--gradient-accent)" }}
+                  style={{ background: "var(--gradient-primary)" }}
                 >
                   {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
                   {loading ? "Analyzing Molecular Data..." : "Predict Subtype & Survival"}
