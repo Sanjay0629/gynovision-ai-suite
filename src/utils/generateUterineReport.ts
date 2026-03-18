@@ -282,8 +282,14 @@ export function generateUterineReport(data: UterineReportData) {
     thinDivider();
   }
 
-  // ── Clinical Inputs Summary ──
+  // ── Clinical Inputs Summary (force new page) ──
   if (data.clinicalInputs) {
+    addFooter();
+    doc.addPage();
+    pageNum++;
+    doc.setFillColor(...COLORS.white);
+    doc.rect(0, 0, pageWidth, pageHeight, "F");
+    y = 20;
     sectionTitle("Clinical Parameters Summary");
 
     const entries = Object.entries(data.clinicalInputs);
