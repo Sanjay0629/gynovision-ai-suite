@@ -395,6 +395,14 @@ const UterineMolecular = () => {
                 </motion.div>
               )}
             </GlassCard>
+            {results && !loading && (
+              <GlassCard hover={false}>
+                <Button onClick={handleDownloadPDF} variant="outline" className="w-full">
+                  <Download className="w-4 h-4 mr-2" />
+                  Download PDF Report
+                </Button>
+              </GlassCard>
+            )}
             <DisclaimerBox />
           </div>
         </div>
