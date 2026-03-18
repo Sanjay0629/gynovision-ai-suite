@@ -207,6 +207,7 @@ const CervicalCytology = () => {
                 patientName: patientName || undefined,
                 patientId: patientId || undefined,
                 patientAge: patientAge || undefined,
+                referringPhysician: referringPhysician || undefined,
               })
             }
           >
