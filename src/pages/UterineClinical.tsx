@@ -342,7 +342,7 @@ const UterineClinical = () => {
                 </div>
                 <div>
                   <Label>Age (years)</Label>
-                  <Input type="number" min="0" max="150" placeholder="e.g. 55" className="mt-1.5" value={patientAge} onChange={(e) => setPatientAge(e.target.value)} />
+                  <Input type="number" min="0" max="150" placeholder="e.g. 55" className="mt-1.5" value={patientAge} onChange={(e) => setPatientAge(e.target.value)} required />
                 </div>
                 <div>
                   <Label>Referring Physician</Label>
