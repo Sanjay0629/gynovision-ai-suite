@@ -162,6 +162,28 @@ const CervicalClinical = () => {
     setForm(INITIAL_FORM);
     setResults(null);
     setError(null);
+    setPatientName("");
+    setPatientId("");
+    setPatientAge("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleDownloadPDF = () => {
+    if (!results) return;
+    generateCervicalClinicalReport({
+      cancer_probability: results.cancer_probability,
+      risk_label: results.risk_label,
+      thresholds: results.thresholds,
+      shap_explanation: results.shap_explanation,
+      cds_guidance: results.cds_guidance,
+      patientName: patientName || undefined,
+      patientId: patientId || undefined,
+      patientAge: patientAge || undefined,
+      clinicalInputs: Object.fromEntries(
+        Object.entries(form).map(([k, v]) => [k, v === "" ? null : parseFloat(v)])
+      ),
+    });
+    toast.success("PDF report downloaded");
   };
 
   const maxShapAbs = results
