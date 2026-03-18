@@ -136,87 +136,99 @@ def transform_and_pca(df: pd.DataFrame, imputer, scaler) -> pd.DataFrame:
 #  SHAP Explainer
 # ──────────────────────────────────────────────
 
+def _patch_shap_xgb_base_score():
+    """Monkey-patch SHAP's XGBTreeModelLoader so it can handle XGBoost
+    models that serialise ``base_score`` as a bracketed string like
+    ``'[5E-1]'`` instead of a plain float.  This is a known incompatibility
+    between newer XGBoost versions and older SHAP releases.
+    """
+    from shap.explainers._tree import XGBTreeModelLoader
+
+    _orig_init = XGBTreeModelLoader.__init__
+
+    def _patched_init(self, xgb_model):
+        # Temporarily wrap float() to strip brackets from base_score
+        import builtins
+        _real_float = builtins.float
+
+        def _safe_float(x):
+            if isinstance(x, str) and x.startswith("[") and x.endswith("]"):
+                return _real_float(x.strip("[]"))
+            return _real_float(x)
+
+        builtins.float = _safe_float
+        try:
+            _orig_init(self, xgb_model)
+        finally:
+            builtins.float = _real_float
+
+    XGBTreeModelLoader.__init__ = _patched_init
+
+# Apply the patch once at import time
+_patch_shap_xgb_base_score()
+
+
 def _compute_shap(model, X_df, is_tree=True, top_n=5) -> list:
     """Compute per-prediction SHAP explanations."""
+
+    # Display-friendly labels
+    name_map = {
+        "Mutation Count": "Mutation Count",
+        "Fraction Genome Altered": "Fraction Genome Altered",
+        "Diagnosis Age": "Age at Diagnosis",
+        "MSI_PC1": "MSI / Mutation Signature",
+        "Race Category_Asian": "Race (Asian)",
+        "Race Category_Black or African American": "Race (Black/African American)",
+        "Race Category_Native Hawaiian or Other Pacific Islander": "Race (Native Hawaiian/Pacific Islander)",
+        "Race Category_White": "Race (White)",
+    }
+
+    def _friendly(name: str) -> str:
+        return name_map.get(name, name.replace("Race Category_", "Race (") + ")")
+
     try:
-        # For tree-based models (Random Forest, XGBoost)
-        explainer = shap.TreeExplainer(model)
+        # ----------------------------------------------------------
+        # 1.  Obtain a SHAP-compatible model object
+        # ----------------------------------------------------------
+        explainer_input = model
+
+        if hasattr(model, "get_booster"):
+            explainer_input = model.get_booster()
+
+        # ----------------------------------------------------------
+        # 2.  Compute SHAP values
+        # ----------------------------------------------------------
+        explainer = shap.TreeExplainer(explainer_input)
         shap_values = explainer.shap_values(X_df)
-        
-        # XGBoost returns standard array, RandomForest returns list of arrays per class
+
+        # RandomForest returns a list of arrays (one per class)
         if isinstance(shap_values, list):
-            sv = shap_values[1] # Take positive class or main class
+            sv = shap_values[1]          # positive / main class
         else:
             sv = shap_values
-            
+
         values = sv[0] if sv.ndim == 2 else sv
-        
+
         feature_names = X_df.columns.tolist()
         pairs = list(zip(feature_names, values))
-        
+
         # Sort by absolute magnitude
         pairs.sort(key=lambda x: abs(x[1]), reverse=True)
         top = pairs[:top_n]
-        
-        # Clean up names for frontend
-        name_map = {
-            "mutation_count": "Mutation Count",
-            "fraction_genome_altered": "Fraction Genome Altered",
-            "diagnosis_age": "Age at Diagnosis",
-            "MSI_PC1": "MSI / Mutation Signature",
-            "Race Category_Asian": "Race (Asian)",
-            "Race Category_Black or African American": "Race (Black/African American)",
-            "Race Category_White": "Race (White)",
-        }
-        
+
         return [
             {
-                "feature": name_map.get(name, name.replace("Race Category_", "Race (") + ")"),
+                "feature": _friendly(name),
                 "shap_value": round(float(val), 4),
-                "direction": "increases risk" if val > 0 else "decreases risk"
+                "direction": "increases risk" if val > 0 else "decreases risk",
             }
             for name, val in top
         ]
-        
+
     except Exception as e:
         print(f"[SHAP WARNING] Could not compute SHAP values: {e}")
-        try:
-            # Fallback to XGBoost global feature importances
-            importances = model.feature_importances_
-            feature_names = X_df.columns.tolist()
-            pairs = list(zip(feature_names, importances))
-            
-            # Sort by absolute magnitude
-            pairs.sort(key=lambda x: abs(x[1]), reverse=True)
-            top = pairs[:top_n]
-            
-            name_map = {
-                "Mutation Count": "Mutation Count",
-                "Fraction Genome Altered": "Fraction Genome Altered",
-                "Diagnosis Age": "Age at Diagnosis",
-                "MSI_PC1": "MSI / Mutation Signature",
-                "Race Category_Asian": "Race (Asian)",
-                "Race Category_Black or African American": "Race (Black/African American)",
-                "Race Category_White": "Race (White)",
-            }
-            
-            # Since global importances are always positive, we guess the direction
-            # based on the overall survival prediction risk. If probability > 0.5, 
-            # we classify top features as increasing risk. Otherwise decreasing.
-            prob = model.predict_proba(X_df)[0][1]
-            direction = "increases risk" if prob >= 0.5 else "decreases risk"
-            
-            return [
-                {
-                    "feature": name_map.get(name, name.replace("Race Category_", "Race (") + ")"),
-                    "shap_value": round(float(val), 4),
-                    "direction": direction
-                }
-                for name, val in top if val > 0
-            ]
-        except Exception as fallback_err:
-            print(f"[SHAP FALLBACK FAILED]: {fallback_err}")
-            return []
+        traceback.print_exc()
+        return []
 
 # ──────────────────────────────────────────────
 #  Flask Application
