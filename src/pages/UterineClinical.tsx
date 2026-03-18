@@ -464,6 +464,14 @@ const UterineClinical = () => {
           <div className="space-y-6">
             <GlassCard hover={false}>
               <ResultsPanel results={results} loading={loading} />
+              {results && !loading && (
+                <div className="pt-4 border-t border-border/50 mt-6">
+                  <Button onClick={handleDownloadPDF} variant="outline" className="w-full">
+                    <Download className="w-4 h-4 mr-2" />
+                    Download PDF Report
+                  </Button>
+                </div>
+              )}
             </GlassCard>
             <DisclaimerBox />
           </div>
