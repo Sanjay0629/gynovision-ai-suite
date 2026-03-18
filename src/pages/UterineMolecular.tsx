@@ -81,6 +81,13 @@ const UterineMolecular = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleReset = () => {
+    setFormData(initialFormData);
+    setResults(null);
+    setError(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.race_category) {
