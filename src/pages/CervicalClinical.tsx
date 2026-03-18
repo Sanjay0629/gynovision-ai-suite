@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Brain, Loader2, CheckCircle2, AlertTriangle, Activity, Shield } from "lucide-react";
+import { Brain, Loader2, CheckCircle2, AlertTriangle, Activity, Shield, FileDown } from "lucide-react";
+import { generateCervicalClinicalReport } from "@/utils/generateCervicalClinicalReport";
 import PageHeader from "@/components/PageHeader";
 import GlassCard from "@/components/GlassCard";
 import DisclaimerBox from "@/components/DisclaimerBox";
