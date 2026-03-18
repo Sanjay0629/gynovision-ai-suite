@@ -9,6 +9,7 @@ interface ReportData {
   patientName?: string;
   patientId?: string;
   patientAge?: string;
+  referringPhysician?: string;
 }
 
 const RECOMMENDATIONS: Record<string, { interpretation: string; riskLevel: string; actions: string[] }> = {
