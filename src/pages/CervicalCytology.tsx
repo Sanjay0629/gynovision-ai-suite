@@ -46,6 +46,7 @@ const CervicalCytology = () => {
   const [patientName, setPatientName] = useState("");
   const [patientId, setPatientId] = useState("");
   const [patientAge, setPatientAge] = useState("");
+  const [referringPhysician, setReferringPhysician] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -206,6 +207,7 @@ const CervicalCytology = () => {
                 patientName: patientName || undefined,
                 patientId: patientId || undefined,
                 patientAge: patientAge || undefined,
+                referringPhysician: referringPhysician || undefined,
               })
             }
           >
@@ -256,7 +258,7 @@ const CervicalCytology = () => {
               <h3 className="font-display font-semibold text-lg text-foreground mb-6">Patient & Image Upload</h3>
 
               {/* Patient Info Fields */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
                 <div>
                   <label className="text-xs font-medium text-muted-foreground mb-1 block">Patient Name</label>
                   <input
@@ -286,6 +288,16 @@ const CervicalCytology = () => {
                     placeholder="35"
                     min="0"
                     max="150"
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Referring Physician</label>
+                  <input
+                    type="text"
+                    value={referringPhysician}
+                    onChange={(e) => setReferringPhysician(e.target.value)}
+                    placeholder="Dr. Smith"
                     className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                   />
                 </div>
