@@ -238,7 +238,7 @@ const UterineClinical = () => {
   const [patientName, setPatientName] = useState("");
   const [patientId, setPatientId] = useState("");
   const [patientAge, setPatientAge] = useState("");
-  const [referringPhysician, setReferringPhysician] = useState("");
+  
 
   const setField = (key: keyof typeof initialFormData, value: string | boolean) =>
     setFormData((prev) => ({ ...prev, [key]: value }));
