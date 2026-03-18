@@ -89,6 +89,9 @@ const UterineMolecular = () => {
     setFormData(initialFormData);
     setResults(null);
     setError(null);
+    setPatientName("");
+    setPatientId("");
+    setPatientAge("");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
