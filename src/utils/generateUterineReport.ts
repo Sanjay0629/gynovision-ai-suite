@@ -242,35 +242,40 @@ export function generateUterineReport(data: UterineReportData) {
     doc.text("Top features influencing this prediction, ranked by impact magnitude", margin, y);
     y += 8;
 
-    const maxAbs = Math.max(...data.shap_explanation.map((s) => Math.abs(s.shap_value)));
-    const shapBarMax = contentWidth - 80;
+    const maxAbs = Math.max(1, ...data.shap_explanation.map((s) => Math.abs(s.shap_value || 0)));
+    const valueColumnWidth = 34;
+    const labelColumnWidth = contentWidth - valueColumnWidth - 8;
+    const barX = margin + 2;
+    const barW = contentWidth - 4;
 
     for (const feat of data.shap_explanation) {
-      ensureSpace(16);
       const isRisk = feat.direction === "increases risk";
       const barColor = isRisk ? COLORS.riskHigh : COLORS.riskLow;
-      const widthPct = Math.min((Math.abs(feat.shap_value) / maxAbs) * shapBarMax, shapBarMax);
+      const valueText = `${isRisk ? "+" : "-"}${Math.abs(feat.shap_value || 0).toFixed(3)}`;
+      const featureLabel = feat.feature.replace(/_/g, " ");
+      const labelLines = doc.splitTextToSize(featureLabel, labelColumnWidth);
+      const rowHeight = Math.max(12, labelLines.length * 4 + 8);
+      const fillWidth = Math.min((Math.abs(feat.shap_value || 0) / maxAbs) * barW, barW);
 
-      // Feature name
+      ensureSpace(rowHeight + 2);
+
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
       doc.setTextColor(...COLORS.heading);
-      doc.text(feat.feature.replace(/_/g, " "), margin + 2, y);
+      doc.text(labelLines, margin + 2, y);
 
-      // Direction + value
       doc.setFont("helvetica", "bold");
       doc.setFontSize(8);
       doc.setTextColor(...barColor);
-      const arrow = isRisk ? "↑" : "↓";
-      doc.text(`${arrow} ${Math.abs(feat.shap_value).toFixed(3)}`, pageWidth - margin - 2, y, { align: "right" });
+      doc.text(valueText, pageWidth - margin - 2, y, { align: "right" });
 
-      // Bar
-      y += 3;
+      const barY = y + labelLines.length * 4 + 1;
       doc.setFillColor(...COLORS.bgLight);
-      doc.roundedRect(margin + 2, y, shapBarMax, 3, 1.5, 1.5, "F");
+      doc.roundedRect(barX, barY, barW, 3, 1.5, 1.5, "F");
       doc.setFillColor(...barColor);
-      doc.roundedRect(margin + 2, y, Math.max(0.5, widthPct), 3, 1.5, 1.5, "F");
-      y += 9;
+      doc.roundedRect(barX, barY, Math.max(0.5, fillWidth), 3, 1.5, 1.5, "F");
+
+      y += rowHeight;
     }
 
     y += 4;
