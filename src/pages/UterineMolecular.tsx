@@ -95,6 +95,25 @@ const UterineMolecular = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const handleDownloadPDF = () => {
+    if (!results) return;
+    generateMolecularReport({
+      ...results,
+      patientName,
+      patientId,
+      patientAge,
+      molecularInputs: {
+        mutation_count: Number(formData.mutation_count),
+        fraction_genome_altered: Number(formData.fraction_genome_altered),
+        msi_mantis_score: Number(formData.msi_mantis_score),
+        msisensor_score: Number(formData.msisensor_score),
+        diagnosis_age: Number(formData.diagnosis_age),
+        race_category: formData.race_category,
+      },
+    });
+    toast.success("PDF report downloaded");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.race_category) {
