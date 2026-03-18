@@ -151,6 +151,28 @@ const UterineMolecular = () => {
           {/* ── Input Form ── */}
           <GlassCard hover={false}>
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Patient Information */}
+              <div className="flex items-center gap-2 mb-2">
+                <HeartPulse className="w-5 h-5 text-medical-indigo" />
+                <h3 className="font-display font-semibold text-lg text-foreground">
+                  Patient Information
+                </h3>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label>Patient Name</Label>
+                  <Input placeholder="Full name" className="mt-1.5" value={patientName} onChange={(e) => setPatientName(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Patient ID</Label>
+                  <Input placeholder="e.g. UT-00123" className="mt-1.5" value={patientId} onChange={(e) => setPatientId(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Age (years)</Label>
+                  <Input type="number" placeholder="e.g. 59" className="mt-1.5" value={patientAge} onChange={(e) => setPatientAge(e.target.value)} />
+                </div>
+              </div>
+
               {/* Genomic Features */}
               <div className="flex items-center gap-2 mb-2">
                 <Dna className="w-5 h-5 text-medical-teal" />
