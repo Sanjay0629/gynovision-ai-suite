@@ -207,7 +207,7 @@ export function generateUterineReport(data: UterineReportData) {
   doc.setFontSize(8);
   doc.setTextColor(...COLORS.muted);
   doc.text(
-    `Low ≤ ${(data.threshold_used.low_upper * 100).toFixed(0)}%  |  High ≥ ${(data.threshold_used.high_lower * 100).toFixed(0)}%`,
+    `Low <= ${(data.threshold_used.low_upper * 100).toFixed(0)}%  |  High >= ${(data.threshold_used.high_lower * 100).toFixed(0)}%`,
     pageWidth - margin - 55, y + 30
   );
 
