@@ -244,7 +244,7 @@ const UterineClinical = () => {
     setFormData((prev) => ({ ...prev, [key]: value }));
 
   const buildPayload = () => ({
-    Age: Number(formData.Age),
+    Age: Number(patientAge),
     BMI: Number(formData.BMI),
     MenopauseStatus: formData.MenopauseStatus,
     AbnormalBleeding: formData.AbnormalBleeding ? "Yes" : "No",
