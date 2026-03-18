@@ -333,14 +333,33 @@ const CervicalCytology = () => {
                   onChange={handleFile}
                 />
 
-                <Button
-                  type="submit"
-                  disabled={!preview || loading}
-                  className="w-full mt-6"
-                  style={{ background: "var(--gradient-primary)" }}
-                >
-                  {loading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Classifying…</> : "Classify Image"}
-                </Button>
+                <div className="flex gap-3 mt-6">
+                  <Button
+                    type="submit"
+                    disabled={!preview || loading}
+                    className="flex-1"
+                    style={{ background: "var(--gradient-primary)" }}
+                  >
+                    {loading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Classifying…</> : "Classify Image"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setPreview(null);
+                      setResults(null);
+                      setError(null);
+                      setPatientName("");
+                      setPatientId("");
+                      setPatientAge("");
+                      setReferringPhysician("");
+                      if (fileRef.current) fileRef.current.value = "";
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                  >
+                    Reset
+                  </Button>
+                </div>
 
                 {error && (
                   <div className="mt-3 p-3 rounded-lg border border-destructive/30 bg-destructive/5 text-sm text-destructive">
