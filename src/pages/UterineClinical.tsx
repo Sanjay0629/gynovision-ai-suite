@@ -300,7 +300,6 @@ const UterineClinical = () => {
       patientName,
       patientId,
       patientAge,
-      
       clinicalInputs: buildPayload(),
     });
     toast.success("PDF report downloaded");
