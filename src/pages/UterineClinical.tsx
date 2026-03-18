@@ -244,7 +244,7 @@ const UterineClinical = () => {
     setFormData((prev) => ({ ...prev, [key]: value }));
 
   const buildPayload = () => ({
-    Age: Number(patientAge),
+    Age: Number(formData.Age),
     BMI: Number(formData.BMI),
     MenopauseStatus: formData.MenopauseStatus,
     AbnormalBleeding: formData.AbnormalBleeding ? "Yes" : "No",
@@ -342,7 +342,7 @@ const UterineClinical = () => {
                 </div>
                 <div>
                   <Label>Age (years)</Label>
-                  <Input type="number" min="0" max="150" placeholder="e.g. 55" className="mt-1.5" value={patientAge} onChange={(e) => setPatientAge(e.target.value)} required />
+                  <Input type="number" min="0" max="150" placeholder="e.g. 55" className="mt-1.5" value={patientAge} onChange={(e) => setPatientAge(e.target.value)} />
                 </div>
                 <div>
                   <Label>Referring Physician</Label>
@@ -351,8 +351,12 @@ const UterineClinical = () => {
               </div>
 
               {/* Demographics */}
-              <SectionHeader title="Demographics" count={2} />
+              <SectionHeader title="Demographics" count={3} />
               <div className="grid grid-cols-2 gap-4 pt-2">
+                <div>
+                  <Label>Age (clinical input)</Label>
+                  <Input type="number" placeholder="e.g. 62" className="mt-1.5" value={formData.Age} onChange={(e) => setField("Age", e.target.value)} required />
+                </div>
                 <div>
                   <Label>BMI (kg/m²)</Label>
                   <Input type="number" step="0.1" placeholder="e.g. 31.5" className="mt-1.5" value={formData.BMI} onChange={(e) => setField("BMI", e.target.value)} required />
