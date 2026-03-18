@@ -381,6 +381,12 @@ const CervicalClinical = () => {
                       </ul>
                     </div>
                   )}
+
+                  {/* Download PDF */}
+                  <Button type="button" variant="outline" className="w-full" onClick={handleDownloadPDF}>
+                    <FileDown className="w-4 h-4 mr-2" />
+                    Download PDF Report
+                  </Button>
                 </motion.div>
               )}
             </GlassCard>
