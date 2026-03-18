@@ -18,7 +18,7 @@ export interface UterineReportData {
   patientName?: string;
   patientId?: string;
   patientAge?: string;
-  referringPhysician?: string;
+  
   // Clinical inputs for reference
   clinicalInputs?: Record<string, string | number | boolean>;
 }
@@ -105,9 +105,9 @@ export function generateUterineReport(data: UterineReportData) {
   y += 8;
 
   // ── Patient Information ──
-  if (data.patientName || data.patientId || data.patientAge || data.referringPhysician) {
+  if (data.patientName || data.patientId || data.patientAge) {
     doc.setFillColor(...COLORS.bgLight);
-    doc.roundedRect(margin, y, contentWidth, 32, 2, 2, "F");
+    doc.roundedRect(margin, y, contentWidth, 22, 2, 2, "F");
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...COLORS.primary);
@@ -135,13 +135,7 @@ export function generateUterineReport(data: UterineReportData) {
     doc.setFont("helvetica", "normal");
     doc.text(data.patientAge ? `${data.patientAge} years` : "N/A", col3 + 14, infoY);
 
-    const infoY2 = infoY + 10;
-    doc.setFont("helvetica", "bold");
-    doc.text("Referring Physician:", col1, infoY2);
-    doc.setFont("helvetica", "normal");
-    doc.text(data.referringPhysician || "N/A", col1 + 48, infoY2);
-
-    y += 38;
+    y += 28;
   }
 
   // Header divider
@@ -213,7 +207,7 @@ export function generateUterineReport(data: UterineReportData) {
   doc.setFontSize(8);
   doc.setTextColor(...COLORS.muted);
   doc.text(
-    `Low ≤ ${(data.threshold_used.low_upper * 100).toFixed(0)}%  |  High ≥ ${(data.threshold_used.high_lower * 100).toFixed(0)}%`,
+    `Low <= ${(data.threshold_used.low_upper * 100).toFixed(0)}%  |  High >= ${(data.threshold_used.high_lower * 100).toFixed(0)}%`,
     pageWidth - margin - 55, y + 30
   );
 
