@@ -287,28 +287,75 @@ export function generateUterineReport(data: UterineReportData) {
     sectionTitle("Clinical Parameters Summary");
 
     const entries = Object.entries(data.clinicalInputs);
-    const colWidth = (contentWidth - 4) / 2;
+    const rowH = 8;
+    const colW = contentWidth / 2;
+    const paramCol = margin;
+    const valCol1 = margin + colW * 0.6;
+    const paramCol2 = margin + colW;
+    const valCol2 = margin + colW + colW * 0.6;
 
-    for (let i = 0; i < entries.length; i += 2) {
-      ensureSpace(10);
-      for (let j = 0; j < 2 && i + j < entries.length; j++) {
-        const [key, val] = entries[i + j];
-        const xOff = margin + 2 + j * colWidth;
-        const label = key.replace(/_/g, " ");
+    // Table header
+    ensureSpace(12);
+    doc.setFillColor(...COLORS.primary);
+    doc.rect(margin, y - 3, contentWidth, rowH, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.5);
+    doc.setTextColor(...COLORS.white);
+    doc.text("PARAMETER", paramCol + 3, y + 1.5);
+    doc.text("VALUE", valCol1, y + 1.5);
+    doc.text("PARAMETER", paramCol2 + 3, y + 1.5);
+    doc.text("VALUE", valCol2, y + 1.5);
+    y += rowH + 1;
 
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(8);
-        doc.setTextColor(...COLORS.muted);
-        doc.text(`${label}:`, xOff, y);
+    // Table rows (two columns side by side)
+    const half = Math.ceil(entries.length / 2);
 
+    for (let i = 0; i < half; i++) {
+      ensureSpace(rowH + 2);
+
+      // Alternating row background
+      if (i % 2 === 0) {
+        doc.setFillColor(...COLORS.bgLight);
+        doc.rect(margin, y - 3.5, contentWidth, rowH, "F");
+      }
+
+      // Left column entry
+      const [keyL, valL] = entries[i];
+      const labelL = keyL.replace(/_/g, " ");
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
+      doc.setTextColor(...COLORS.body);
+      doc.text(labelL, paramCol + 3, y + 1);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...COLORS.heading);
+      doc.text(String(valL), valCol1, y + 1);
+
+      // Right column entry (if exists)
+      if (i + half < entries.length) {
+        const [keyR, valR] = entries[i + half];
+        const labelR = keyR.replace(/_/g, " ");
         doc.setFont("helvetica", "normal");
         doc.setTextColor(...COLORS.body);
-        doc.text(String(val), xOff + doc.getTextWidth(`${label}: `) + 2, y);
+        doc.text(labelR, paramCol2 + 3, y + 1);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(...COLORS.heading);
+        doc.text(String(valR), valCol2, y + 1);
       }
-      y += 6;
+
+      // Center divider line
+      doc.setDrawColor(...COLORS.border);
+      doc.setLineWidth(0.2);
+      doc.line(margin + colW, y - 3.5, margin + colW, y + 4.5);
+
+      y += rowH;
     }
 
-    y += 4;
+    // Table bottom border
+    doc.setDrawColor(...COLORS.border);
+    doc.setLineWidth(0.3);
+    doc.line(margin, y - 3.5, margin + contentWidth, y - 3.5);
+
+    y += 6;
     thinDivider();
   }
 
