@@ -65,6 +65,7 @@ const CervicalCytology = () => {
     const file = fileRef.current?.files?.[0];
     if (!preview || !file) return;
 
+    window.scrollTo({ top: 0, behavior: "smooth" });
     setLoading(true);
     setResults(null);
     setError(null);
