@@ -18,7 +18,7 @@ export interface UterineReportData {
   patientName?: string;
   patientId?: string;
   patientAge?: string;
-  referringPhysician?: string;
+  
   // Clinical inputs for reference
   clinicalInputs?: Record<string, string | number | boolean>;
 }
