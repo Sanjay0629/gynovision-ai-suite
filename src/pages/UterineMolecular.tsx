@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Dna, Loader2, Activity, HeartPulse, AlertCircle } from "lucide-react";
+import { Dna, Loader2, Activity, HeartPulse, AlertCircle, Download } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import GlassCard from "@/components/GlassCard";
 import DisclaimerBox from "@/components/DisclaimerBox";
 import { Button } from "@/components/ui/button";
+import { generateMolecularReport } from "@/utils/generateMolecularReport";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -60,6 +61,9 @@ const UterineMolecular = () => {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<PredictionResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [patientName, setPatientName] = useState("");
+  const [patientId, setPatientId] = useState("");
+  const [patientAge, setPatientAge] = useState("");
 
   const initialFormData = {
     mutation_count: "",
@@ -85,7 +89,29 @@ const UterineMolecular = () => {
     setFormData(initialFormData);
     setResults(null);
     setError(null);
+    setPatientName("");
+    setPatientId("");
+    setPatientAge("");
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleDownloadPDF = () => {
+    if (!results) return;
+    generateMolecularReport({
+      ...results,
+      patientName,
+      patientId,
+      patientAge,
+      molecularInputs: {
+        mutation_count: Number(formData.mutation_count),
+        fraction_genome_altered: Number(formData.fraction_genome_altered),
+        msi_mantis_score: Number(formData.msi_mantis_score),
+        msisensor_score: Number(formData.msisensor_score),
+        diagnosis_age: Number(formData.diagnosis_age),
+        race_category: formData.race_category,
+      },
+    });
+    toast.success("PDF report downloaded");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -144,6 +170,28 @@ const UterineMolecular = () => {
           {/* ── Input Form ── */}
           <GlassCard hover={false}>
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Patient Information */}
+              <div className="flex items-center gap-2 mb-2">
+                <HeartPulse className="w-5 h-5 text-medical-indigo" />
+                <h3 className="font-display font-semibold text-lg text-foreground">
+                  Patient Information
+                </h3>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label>Patient Name</Label>
+                  <Input placeholder="Full name" className="mt-1.5" value={patientName} onChange={(e) => setPatientName(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Patient ID</Label>
+                  <Input placeholder="e.g. UT-00123" className="mt-1.5" value={patientId} onChange={(e) => setPatientId(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Age (years)</Label>
+                  <Input type="number" placeholder="e.g. 59" className="mt-1.5" value={patientAge} onChange={(e) => setPatientAge(e.target.value)} />
+                </div>
+              </div>
+
               {/* Genomic Features */}
               <div className="flex items-center gap-2 mb-2">
                 <Dna className="w-5 h-5 text-medical-teal" />
@@ -366,6 +414,14 @@ const UterineMolecular = () => {
                 </motion.div>
               )}
             </GlassCard>
+            {results && !loading && (
+              <GlassCard hover={false}>
+                <Button onClick={handleDownloadPDF} variant="outline" className="w-full">
+                  <Download className="w-4 h-4 mr-2" />
+                  Download PDF Report
+                </Button>
+              </GlassCard>
+            )}
             <DisclaimerBox />
           </div>
         </div>
