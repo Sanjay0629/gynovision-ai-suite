@@ -140,6 +140,8 @@ const CervicalClinical = () => {
       payload[key] = val === "" ? null : parseFloat(val);
     }
 
+    window.scrollTo({ top: 0, behavior: "smooth" });
+
     try {
       const res = await fetch(API_URL, {
         method: "POST",
