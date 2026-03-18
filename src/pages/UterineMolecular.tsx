@@ -15,15 +15,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-} from "recharts";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -325,51 +316,37 @@ const UterineMolecular = () => {
                     </div>
                   </div>
 
-                  {/* SHAP Chart */}
+                  {/* SHAP Explanation */}
                   {results.shap_explanation?.length > 0 && (
                     <div className="space-y-3">
-                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Key Predictive Factors
+                      <h4 className="text-sm font-semibold text-foreground">Key Contributing Factors</h4>
+                      <p className="text-xs text-muted-foreground">
+                        Top features influencing this prediction (SHAP values)
                       </p>
-                      <div className="h-48">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart
-                            data={results.shap_explanation.map((s) => ({
-                              ...s,
-                              abs_val: Math.abs(s.shap_value),
-                              color: s.direction === "increases risk" ? "#e74c3c" : "#27ae60",
-                            }))}
-                            layout="vertical"
-                            margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
-                          >
-                            <XAxis type="number" tick={{ fontSize: 11 }} />
-                            <YAxis
-                              dataKey="feature"
-                              type="category"
-                              width={120}
-                              tick={{ fontSize: 11 }}
-                            />
-                            <Tooltip
-                              formatter={(value: number, _name: string, props: any) => [
-                                `${value.toFixed(4)} (${props.payload.direction})`,
-                                "Impact",
-                              ]}
-                              contentStyle={{
-                                backgroundColor: "hsl(var(--card))",
-                                borderColor: "hsl(var(--border))",
-                                borderRadius: "8px",
-                              }}
-                            />
-                            <Bar dataKey="abs_val" radius={[0, 4, 4, 0]}>
-                              {results.shap_explanation.map((entry, index) => (
-                                <Cell
-                                  key={`cell-${index}`}
-                                  fill={entry.direction === "increases risk" ? "#e74c3c" : "#27ae60"}
+                      <div className="space-y-2">
+                        {results.shap_explanation.map((f, i) => {
+                          const maxAbs = Math.max(
+                            ...results.shap_explanation.map((s) => Math.abs(s.shap_value))
+                          );
+                          const widthPct = Math.min((Math.abs(f.shap_value) / maxAbs) * 100, 100);
+                          const isRisk = f.direction === "increases risk";
+                          return (
+                            <div key={i} className="space-y-1">
+                              <div className="flex justify-between text-xs">
+                                <span className="text-foreground">{f.feature.replace(/_/g, " ")}</span>
+                                <span className={isRisk ? "text-destructive" : "text-green-500"}>
+                                  {isRisk ? "↑" : "↓"} {Math.abs(f.shap_value).toFixed(2)}
+                                </span>
+                              </div>
+                              <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full ${isRisk ? "bg-destructive/70" : "bg-green-500/70"}`}
+                                  style={{ width: `${widthPct}%` }}
                                 />
-                              ))}
-                            </Bar>
-                          </BarChart>
-                        </ResponsiveContainer>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
