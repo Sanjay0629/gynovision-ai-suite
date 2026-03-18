@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Dna, Loader2, Activity, HeartPulse, AlertCircle } from "lucide-react";
+import { Dna, Loader2, Activity, HeartPulse, AlertCircle, Download } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import GlassCard from "@/components/GlassCard";
 import DisclaimerBox from "@/components/DisclaimerBox";
 import { Button } from "@/components/ui/button";
+import { generateMolecularReport } from "@/utils/generateMolecularReport";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
