@@ -340,14 +340,8 @@ export function generateMolecularReport(data: MolecularReportData) {
     thinDivider();
   }
 
-  // ── Molecular Inputs Summary (new page) ──
+  // ── Molecular Inputs Summary ──
   if (data.molecularInputs) {
-    addFooter();
-    doc.addPage();
-    pageNum++;
-    doc.setFillColor(...COLORS.white);
-    doc.rect(0, 0, pageWidth, pageHeight, "F");
-    y = 20;
     sectionTitle("Genomic & Clinical Parameters");
 
     const entries = Object.entries(data.molecularInputs);
