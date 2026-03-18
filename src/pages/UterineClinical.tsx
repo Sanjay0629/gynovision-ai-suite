@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Activity, Loader2, AlertCircle, CheckCircle2, ChevronRight } from "lucide-react";
+import { Activity, Loader2, AlertCircle, CheckCircle2, ChevronRight, Download } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import GlassCard from "@/components/GlassCard";
 import DisclaimerBox from "@/components/DisclaimerBox";
@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { generateUterineReport } from "@/utils/generateUterineReport";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -234,6 +235,10 @@ const UterineClinical = () => {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<PredictionResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [patientName, setPatientName] = useState("");
+  const [patientId, setPatientId] = useState("");
+  const [patientAge, setPatientAge] = useState("");
+  const [referringPhysician, setReferringPhysician] = useState("");
 
   const setField = (key: keyof typeof initialFormData, value: string | boolean) =>
     setFormData((prev) => ({ ...prev, [key]: value }));
@@ -288,6 +293,19 @@ const UterineClinical = () => {
     }
   };
 
+  const handleDownloadPDF = () => {
+    if (!results) return;
+    generateUterineReport({
+      ...results,
+      patientName,
+      patientId,
+      patientAge,
+      referringPhysician,
+      clinicalInputs: buildPayload(),
+    });
+    toast.success("PDF report downloaded");
+  };
+
   const handleReset = () => {
     setFormData(initialFormData);
     setResults(null);
@@ -311,11 +329,32 @@ const UterineClinical = () => {
             </h3>
 
             <form onSubmit={handleSubmit} className="space-y-1">
+              {/* Patient Information */}
+              <SectionHeader title="Patient Information" count={4} />
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <div>
+                  <Label>Patient Name</Label>
+                  <Input placeholder="Full name" className="mt-1.5" value={patientName} onChange={(e) => setPatientName(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Patient ID</Label>
+                  <Input placeholder="e.g. UT-00123" className="mt-1.5" value={patientId} onChange={(e) => setPatientId(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Age (years)</Label>
+                  <Input type="number" min="0" max="150" placeholder="e.g. 55" className="mt-1.5" value={patientAge} onChange={(e) => setPatientAge(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Referring Physician</Label>
+                  <Input placeholder="Dr. Name" className="mt-1.5" value={referringPhysician} onChange={(e) => setReferringPhysician(e.target.value)} />
+                </div>
+              </div>
+
               {/* Demographics */}
               <SectionHeader title="Demographics" count={3} />
               <div className="grid grid-cols-2 gap-4 pt-2">
                 <div>
-                  <Label>Age (years)</Label>
+                  <Label>Age (clinical input)</Label>
                   <Input type="number" placeholder="e.g. 62" className="mt-1.5" value={formData.Age} onChange={(e) => setField("Age", e.target.value)} required />
                 </div>
                 <div>
@@ -425,6 +464,14 @@ const UterineClinical = () => {
           <div className="space-y-6">
             <GlassCard hover={false}>
               <ResultsPanel results={results} loading={loading} />
+              {results && !loading && (
+                <div className="pt-4 border-t border-border/50 mt-6">
+                  <Button onClick={handleDownloadPDF} variant="outline" className="w-full">
+                    <Download className="w-4 h-4 mr-2" />
+                    Download PDF Report
+                  </Button>
+                </div>
+              )}
             </GlassCard>
             <DisclaimerBox />
           </div>
