@@ -1,0 +1,414 @@
+import jsPDF from "jspdf";
+
+interface ShapEntry {
+  feature: string;
+  shap_value: number;
+  direction: string;
+}
+
+interface CdsGuidance {
+  summary: string;
+  actions: string[];
+}
+
+export interface CervicalClinicalReportData {
+  cancer_probability: number;
+  risk_label: string;
+  thresholds: { T1: number; T2: number };
+  shap_explanation: ShapEntry[];
+  cds_guidance: CdsGuidance;
+  patientName?: string;
+  patientId?: string;
+  patientAge?: string;
+  clinicalInputs?: Record<string, string | number | null>;
+}
+
+const COLORS = {
+  primary: [22, 78, 159] as [number, number, number],
+  heading: [17, 24, 39] as [number, number, number],
+  body: [55, 65, 81] as [number, number, number],
+  muted: [107, 114, 128] as [number, number, number],
+  border: [209, 213, 219] as [number, number, number],
+  bgLight: [243, 244, 246] as [number, number, number],
+  white: [255, 255, 255] as [number, number, number],
+  riskLow: [21, 128, 61] as [number, number, number],
+  riskMod: [161, 98, 7] as [number, number, number],
+  riskHigh: [185, 28, 28] as [number, number, number],
+  accent: [37, 99, 235] as [number, number, number],
+};
+
+export function generateCervicalClinicalReport(data: CervicalClinicalReportData) {
+  const doc = new jsPDF();
+  const margin = 18;
+  let y = 0;
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const contentWidth = pageWidth - margin * 2;
+  let pageNum = 1;
+
+  const ensureSpace = (needed: number) => {
+    if (y + needed > pageHeight - 25) {
+      addFooter();
+      doc.addPage();
+      pageNum++;
+      doc.setFillColor(...COLORS.white);
+      doc.rect(0, 0, pageWidth, pageHeight, "F");
+      y = 20;
+    }
+  };
+
+  const addFooter = () => {
+    const footerY = pageHeight - 10;
+    doc.setDrawColor(...COLORS.border);
+    doc.setLineWidth(0.2);
+    doc.line(margin, footerY - 4, pageWidth - margin, footerY - 4);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(...COLORS.muted);
+    doc.text("AI-Assisted Cervical Cancer Clinical Risk Report", margin, footerY);
+    doc.text(`Page ${pageNum}`, pageWidth - margin, footerY, { align: "right" });
+    doc.setFillColor(...COLORS.primary);
+    doc.rect(0, pageHeight - 3, pageWidth, 3, "F");
+  };
+
+  // ── White background ──
+  doc.setFillColor(...COLORS.white);
+  doc.rect(0, 0, pageWidth, pageHeight, "F");
+
+  // ── Top accent bar ──
+  doc.setFillColor(...COLORS.primary);
+  doc.rect(0, 0, pageWidth, 4, "F");
+
+  // ── Header ──
+  y = 18;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(22);
+  doc.setTextColor(...COLORS.primary);
+  doc.text("CERVICAL CANCER RISK REPORT", margin, y);
+  y += 8;
+
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(...COLORS.muted);
+  doc.text("AI-Assisted Clinical Risk Stratification for Cervical Cancer", margin, y);
+  y += 6;
+
+  const dateStr = new Date().toLocaleDateString("en-US", {
+    year: "numeric", month: "long", day: "numeric",
+  });
+  const timeStr = new Date().toLocaleTimeString("en-US", {
+    hour: "2-digit", minute: "2-digit",
+  });
+  doc.setFontSize(8);
+  doc.setTextColor(...COLORS.muted);
+  doc.text(`Report Date: ${dateStr}  |  Time: ${timeStr}  |  Report ID: CCR-${Date.now().toString(36).toUpperCase()}`, margin, y);
+  y += 8;
+
+  // ── Patient Information ──
+  if (data.patientName || data.patientId || data.patientAge) {
+    doc.setFillColor(...COLORS.bgLight);
+    doc.roundedRect(margin, y, contentWidth, 22, 2, 2, "F");
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...COLORS.primary);
+    doc.text("PATIENT INFORMATION", margin + 6, y + 6);
+
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...COLORS.body);
+    const col1 = margin + 6;
+    const col2 = margin + contentWidth * 0.38;
+    const col3 = margin + contentWidth * 0.7;
+    const infoY = y + 14;
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Name:", col1, infoY);
+    doc.setFont("helvetica", "normal");
+    doc.text(data.patientName || "N/A", col1 + 20, infoY);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Patient ID:", col2, infoY);
+    doc.setFont("helvetica", "normal");
+    doc.text(data.patientId || "N/A", col2 + 28, infoY);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Age:", col3, infoY);
+    doc.setFont("helvetica", "normal");
+    doc.text(data.patientAge ? `${data.patientAge} years` : "N/A", col3 + 14, infoY);
+
+    y += 28;
+  }
+
+  // Header divider
+  doc.setDrawColor(...COLORS.primary);
+  doc.setLineWidth(0.8);
+  doc.line(margin, y, pageWidth - margin, y);
+  y += 10;
+
+  // ── Helpers ──
+  const sectionTitle = (title: string) => {
+    ensureSpace(20);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(...COLORS.primary);
+    doc.text(title.toUpperCase(), margin, y);
+    y += 2;
+    doc.setDrawColor(...COLORS.accent);
+    doc.setLineWidth(0.4);
+    doc.line(margin, y, margin + doc.getTextWidth(title.toUpperCase()), y);
+    y += 7;
+  };
+
+  const thinDivider = () => {
+    doc.setDrawColor(...COLORS.border);
+    doc.setLineWidth(0.3);
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 8;
+  };
+
+  // ── Risk Assessment Result ──
+  sectionTitle("Risk Assessment Result");
+
+  const riskColor = data.risk_label === "High Risk" ? COLORS.riskHigh
+    : data.risk_label === "Moderate Risk" ? COLORS.riskMod : COLORS.riskLow;
+
+  const boxH = 36;
+  doc.setFillColor(...COLORS.bgLight);
+  doc.setDrawColor(...COLORS.border);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(margin, y, contentWidth, boxH, 3, 3, "FD");
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(...COLORS.muted);
+  doc.text("Risk Level", margin + 6, y + 9);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.setTextColor(...riskColor);
+  doc.text(data.risk_label, margin + 6, y + 21);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(...COLORS.muted);
+  doc.text(`Moderate >= ${(data.thresholds.T1 * 100).toFixed(1)}%  |  High >= ${(data.thresholds.T2 * 100).toFixed(1)}%`, margin + 6, y + 30);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(...COLORS.muted);
+  doc.text("Cancer Probability", pageWidth - margin - 55, y + 9);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.setTextColor(...COLORS.primary);
+  doc.text(`${(data.cancer_probability * 100).toFixed(1)}%`, pageWidth - margin - 55, y + 21);
+
+  y += boxH + 6;
+
+  // Risk progress bar
+  const barW = contentWidth - 4;
+  const barH = 6;
+  doc.setFillColor(...COLORS.bgLight);
+  doc.roundedRect(margin + 2, y, barW, barH, 2, 2, "F");
+  const fillW = Math.max(1, data.cancer_probability * barW);
+  doc.setFillColor(...riskColor);
+  doc.roundedRect(margin + 2, y, fillW, barH, 2, 2, "F");
+  y += barH + 4;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  doc.setTextColor(...COLORS.muted);
+  doc.text("0%", margin + 2, y);
+  doc.text("100%", pageWidth - margin - 2, y, { align: "right" });
+  y += 8;
+
+  thinDivider();
+
+  // ── SHAP Explanation ──
+  if (data.shap_explanation?.length > 0) {
+    sectionTitle("Key Contributing Factors (SHAP)");
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...COLORS.muted);
+    doc.text("Top features influencing this prediction, ranked by impact magnitude", margin, y);
+    y += 8;
+
+    const maxAbs = Math.max(1, ...data.shap_explanation.map((s) => Math.abs(s.shap_value || 0)));
+    const valueColumnWidth = 34;
+    const labelColumnWidth = contentWidth - valueColumnWidth - 8;
+    const shapBarX = margin + 2;
+    const shapBarW = contentWidth - 4;
+
+    for (const feat of data.shap_explanation) {
+      const isRisk = feat.direction === "increases risk";
+      const barColor = isRisk ? COLORS.riskHigh : COLORS.riskLow;
+      const valueText = `${isRisk ? "+" : "-"}${Math.abs(feat.shap_value || 0).toFixed(3)}`;
+      const featureLabel = feat.feature.replace(/_/g, " ");
+      const labelLines = doc.splitTextToSize(featureLabel, labelColumnWidth);
+      const rowHeight = Math.max(12, labelLines.length * 4 + 8);
+      const shapFillWidth = Math.min((Math.abs(feat.shap_value || 0) / maxAbs) * shapBarW, shapBarW);
+
+      ensureSpace(rowHeight + 2);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(...COLORS.heading);
+      doc.text(labelLines, margin + 2, y);
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(...barColor);
+      doc.text(valueText, pageWidth - margin - 2, y, { align: "right" });
+
+      const barY = y + labelLines.length * 4 + 1;
+      doc.setFillColor(...COLORS.bgLight);
+      doc.roundedRect(shapBarX, barY, shapBarW, 3, 1.5, 1.5, "F");
+      doc.setFillColor(...barColor);
+      doc.roundedRect(shapBarX, barY, Math.max(0.5, shapFillWidth), 3, 1.5, 1.5, "F");
+
+      y += rowHeight;
+    }
+
+    y += 4;
+    thinDivider();
+  }
+
+  // ── Clinical Decision Support ──
+  if (data.cds_guidance) {
+    sectionTitle("Clinical Decision Support");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.5);
+    doc.setTextColor(...COLORS.heading);
+    doc.text("Summary", margin + 2, y);
+    y += 5;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(...COLORS.body);
+    const summaryLines = doc.splitTextToSize(data.cds_guidance.summary, contentWidth - 4);
+    ensureSpace(summaryLines.length * 4.5 + 10);
+    doc.text(summaryLines, margin + 2, y);
+    y += summaryLines.length * 4.5 + 5;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.5);
+    doc.setTextColor(...COLORS.heading);
+    doc.text("Recommended Actions", margin + 2, y);
+    y += 6;
+
+    for (const action of data.cds_guidance.actions) {
+      ensureSpace(12);
+      doc.setFillColor(...COLORS.primary);
+      doc.circle(margin + 5, y - 1.2, 1.2, "F");
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(...COLORS.body);
+      const actionLines = doc.splitTextToSize(action, contentWidth - 14);
+      doc.text(actionLines, margin + 10, y);
+      y += actionLines.length * 4.5 + 3;
+    }
+
+    y += 4;
+    thinDivider();
+  }
+
+  // ── Clinical Parameters Table ──
+  if (data.clinicalInputs) {
+    sectionTitle("Clinical Parameters");
+
+    const entries = Object.entries(data.clinicalInputs).filter(([, v]) => v !== null && v !== "");
+    const rowH = 8;
+    const colW = contentWidth / 2;
+    const paramCol = margin;
+    const valCol1 = margin + colW * 0.7;
+    const paramCol2 = margin + colW;
+    const valCol2 = margin + colW + colW * 0.7;
+
+    // Table header
+    ensureSpace(12);
+    doc.setFillColor(...COLORS.primary);
+    doc.rect(margin, y - 3, contentWidth, rowH, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.5);
+    doc.setTextColor(...COLORS.white);
+    doc.text("PARAMETER", paramCol + 3, y + 1.5);
+    doc.text("VALUE", valCol1, y + 1.5);
+    doc.text("PARAMETER", paramCol2 + 3, y + 1.5);
+    doc.text("VALUE", valCol2, y + 1.5);
+    y += rowH + 1;
+
+    const half = Math.ceil(entries.length / 2);
+
+    for (let i = 0; i < half; i++) {
+      ensureSpace(rowH + 2);
+
+      if (i % 2 === 0) {
+        doc.setFillColor(...COLORS.bgLight);
+        doc.rect(margin, y - 3.5, contentWidth, rowH, "F");
+      }
+
+      const [keyL, valL] = entries[i];
+      const labelL = keyL.replace(/_/g, " ");
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
+      doc.setTextColor(...COLORS.body);
+      doc.text(labelL.length > 28 ? labelL.substring(0, 26) + ".." : labelL, paramCol + 3, y + 1);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...COLORS.heading);
+      doc.text(String(valL ?? "N/A"), valCol1, y + 1);
+
+      if (i + half < entries.length) {
+        const [keyR, valR] = entries[i + half];
+        const labelR = keyR.replace(/_/g, " ");
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(...COLORS.body);
+        doc.text(labelR.length > 28 ? labelR.substring(0, 26) + ".." : labelR, paramCol2 + 3, y + 1);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(...COLORS.heading);
+        doc.text(String(valR ?? "N/A"), valCol2, y + 1);
+      }
+
+      doc.setDrawColor(...COLORS.border);
+      doc.setLineWidth(0.2);
+      doc.line(margin + colW, y - 3.5, margin + colW, y + 4.5);
+
+      y += rowH;
+    }
+
+    doc.setDrawColor(...COLORS.border);
+    doc.setLineWidth(0.3);
+    doc.line(margin, y - 3.5, margin + contentWidth, y - 3.5);
+
+    y += 6;
+    thinDivider();
+  }
+
+  // ── Disclaimer ──
+  const disclaimerText = "This report is generated by an AI-assisted clinical risk prediction model for educational and clinical decision-support purposes only. It does NOT constitute a definitive medical diagnosis. All findings must be reviewed and confirmed by a qualified healthcare professional. Treatment decisions should not be based solely on this report.";
+  const disclaimerLines = doc.splitTextToSize(disclaimerText, contentWidth - 16);
+  const disclaimerH = disclaimerLines.length * 4 + 12;
+
+  ensureSpace(disclaimerH + 10);
+
+  doc.setFillColor(254, 249, 235);
+  doc.setDrawColor(217, 175, 62);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(margin, y, contentWidth, disclaimerH, 2, 2, "FD");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.setTextColor(161, 98, 7);
+  doc.text("DISCLAIMER", margin + 6, y + 7);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.setTextColor(120, 90, 30);
+  doc.text(disclaimerLines, margin + 6, y + 13);
+
+  y += disclaimerH + 8;
+
+  // ── Footer ──
+  addFooter();
+
+  doc.save(`cervical-clinical-report-${new Date().toISOString().slice(0, 10)}.pdf`);
+}

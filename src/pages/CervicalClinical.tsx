@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Brain, Loader2, CheckCircle2, AlertTriangle, Activity, Shield } from "lucide-react";
+import { Brain, Loader2, CheckCircle2, AlertTriangle, Activity, Shield, FileDown } from "lucide-react";
+import { generateCervicalClinicalReport } from "@/utils/generateCervicalClinicalReport";
 import PageHeader from "@/components/PageHeader";
 import GlassCard from "@/components/GlassCard";
 import DisclaimerBox from "@/components/DisclaimerBox";
@@ -120,6 +121,9 @@ const CervicalClinical = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<PredictionResult | null>(null);
+  const [patientName, setPatientName] = useState("");
+  const [patientId, setPatientId] = useState("");
+  const [patientAge, setPatientAge] = useState("");
 
   const handleChange = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -158,6 +162,28 @@ const CervicalClinical = () => {
     setForm(INITIAL_FORM);
     setResults(null);
     setError(null);
+    setPatientName("");
+    setPatientId("");
+    setPatientAge("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleDownloadPDF = () => {
+    if (!results) return;
+    generateCervicalClinicalReport({
+      cancer_probability: results.cancer_probability,
+      risk_label: results.risk_label,
+      thresholds: results.thresholds,
+      shap_explanation: results.shap_explanation,
+      cds_guidance: results.cds_guidance,
+      patientName: patientName || undefined,
+      patientId: patientId || undefined,
+      patientAge: patientAge || undefined,
+      clinicalInputs: Object.fromEntries(
+        Object.entries(form).map(([k, v]) => [k, v === "" ? null : parseFloat(v)])
+      ),
+    });
+    toast.success("PDF report downloaded");
   };
 
   const maxShapAbs = results
@@ -180,6 +206,23 @@ const CervicalClinical = () => {
             <p className="text-sm text-muted-foreground mb-6">Enter clinical parameters for cervical cancer risk assessment.</p>
 
             <form onSubmit={handleSubmit} className="space-y-2">
+              {/* Patient Info */}
+              <SectionHeader title="Patient Information (Optional)" />
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label className="text-sm">Patient Name</Label>
+                  <Input placeholder="e.g. Jane Doe" value={patientName} onChange={(e) => setPatientName(e.target.value)} className="mt-1.5" />
+                </div>
+                <div>
+                  <Label className="text-sm">Patient ID</Label>
+                  <Input placeholder="e.g. P-001" value={patientId} onChange={(e) => setPatientId(e.target.value)} className="mt-1.5" />
+                </div>
+                <div>
+                  <Label className="text-sm">Age</Label>
+                  <Input type="number" placeholder="e.g. 35" value={patientAge} onChange={(e) => setPatientAge(e.target.value)} className="mt-1.5" />
+                </div>
+              </div>
+
               {/* Section A */}
               <SectionHeader title="A — Demographics & Lifestyle" />
               <div className="grid grid-cols-2 gap-4">
@@ -338,6 +381,12 @@ const CervicalClinical = () => {
                       </ul>
                     </div>
                   )}
+
+                  {/* Download PDF */}
+                  <Button type="button" variant="outline" className="w-full" onClick={handleDownloadPDF}>
+                    <FileDown className="w-4 h-4 mr-2" />
+                    Download PDF Report
+                  </Button>
                 </motion.div>
               )}
             </GlassCard>
