@@ -247,15 +247,18 @@ const UterineMolecular = () => {
                 </div>
               )}
 
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full mt-2"
-                style={{ background: "var(--gradient-accent)" }}
-              >
-                {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                {loading ? "Analyzing Molecular Data..." : "Predict Subtype & Survival"}
-              </Button>
+              <div className="flex gap-3 mt-2">
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1"
+                  style={{ background: "var(--gradient-accent)" }}
+                >
+                  {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                  {loading ? "Analyzing Molecular Data..." : "Predict Subtype & Survival"}
+                </Button>
+                <Button type="button" variant="outline" onClick={handleReset}>Reset</Button>
+              </div>
             </form>
           </GlassCard>
 
