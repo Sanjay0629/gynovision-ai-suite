@@ -46,6 +46,7 @@ const CervicalCytology = () => {
   const [patientName, setPatientName] = useState("");
   const [patientId, setPatientId] = useState("");
   const [patientAge, setPatientAge] = useState("");
+  const [referringPhysician, setReferringPhysician] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
