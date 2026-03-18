@@ -351,12 +351,8 @@ const UterineClinical = () => {
               </div>
 
               {/* Demographics */}
-              <SectionHeader title="Demographics" count={3} />
+              <SectionHeader title="Demographics" count={2} />
               <div className="grid grid-cols-2 gap-4 pt-2">
-                <div>
-                  <Label>Age (clinical input)</Label>
-                  <Input type="number" placeholder="e.g. 62" className="mt-1.5" value={formData.Age} onChange={(e) => setField("Age", e.target.value)} required />
-                </div>
                 <div>
                   <Label>BMI (kg/m²)</Label>
                   <Input type="number" step="0.1" placeholder="e.g. 31.5" className="mt-1.5" value={formData.BMI} onChange={(e) => setField("BMI", e.target.value)} required />
