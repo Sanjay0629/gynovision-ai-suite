@@ -61,14 +61,16 @@ const UterineMolecular = () => {
   const [results, setResults] = useState<PredictionResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const [formData, setFormData] = useState({
+  const initialFormData = {
     mutation_count: "",
     fraction_genome_altered: "",
     msi_mantis_score: "",
     msisensor_score: "",
     diagnosis_age: "",
     race_category: "",
-  });
+  };
+
+  const [formData, setFormData] = useState(initialFormData);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
