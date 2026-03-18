@@ -61,14 +61,16 @@ const UterineMolecular = () => {
   const [results, setResults] = useState<PredictionResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const [formData, setFormData] = useState({
+  const initialFormData = {
     mutation_count: "",
     fraction_genome_altered: "",
     msi_mantis_score: "",
     msisensor_score: "",
     diagnosis_age: "",
     race_category: "",
-  });
+  };
+
+  const [formData, setFormData] = useState(initialFormData);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -77,6 +79,13 @@ const UterineMolecular = () => {
 
   const handleSelectChange = (name: string, value: string) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleReset = () => {
+    setFormData(initialFormData);
+    setResults(null);
+    setError(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -245,15 +254,18 @@ const UterineMolecular = () => {
                 </div>
               )}
 
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full mt-2"
-                style={{ background: "var(--gradient-accent)" }}
-              >
-                {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                {loading ? "Analyzing Molecular Data..." : "Predict Subtype & Survival"}
-              </Button>
+              <div className="flex gap-3 mt-2">
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1"
+                  style={{ background: "var(--gradient-accent)" }}
+                >
+                  {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                  {loading ? "Analyzing Molecular Data..." : "Predict Subtype & Survival"}
+                </Button>
+                <Button type="button" variant="outline" onClick={handleReset}>Reset</Button>
+              </div>
             </form>
           </GlassCard>
 
