@@ -271,8 +271,14 @@ export function generateCervicalClinicalReport(data: CervicalClinicalReportData)
     thinDivider();
   }
 
-  // ── Clinical Decision Support ──
+  // ── Clinical Decision Support ── (force to next page for clean layout)
   if (data.cds_guidance) {
+    addFooter();
+    doc.addPage();
+    pageNum++;
+    doc.setFillColor(...COLORS.white);
+    doc.rect(0, 0, pageWidth, pageHeight, "F");
+    y = 20;
     sectionTitle("Clinical Decision Support");
 
     doc.setFont("helvetica", "bold");
