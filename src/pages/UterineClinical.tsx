@@ -238,7 +238,7 @@ const UterineClinical = () => {
   const [patientName, setPatientName] = useState("");
   const [patientId, setPatientId] = useState("");
   const [patientAge, setPatientAge] = useState("");
-  const [referringPhysician, setReferringPhysician] = useState("");
+  
 
   const setField = (key: keyof typeof initialFormData, value: string | boolean) =>
     setFormData((prev) => ({ ...prev, [key]: value }));
@@ -300,7 +300,7 @@ const UterineClinical = () => {
       patientName,
       patientId,
       patientAge,
-      referringPhysician,
+      
       clinicalInputs: buildPayload(),
     });
     toast.success("PDF report downloaded");
@@ -343,10 +343,6 @@ const UterineClinical = () => {
                 <div>
                   <Label>Age (years)</Label>
                   <Input type="number" min="0" max="150" placeholder="e.g. 55" className="mt-1.5" value={patientAge} onChange={(e) => setPatientAge(e.target.value)} />
-                </div>
-                <div>
-                  <Label>Referring Physician</Label>
-                  <Input placeholder="Dr. Name" className="mt-1.5" value={referringPhysician} onChange={(e) => setReferringPhysician(e.target.value)} />
                 </div>
               </div>
 
