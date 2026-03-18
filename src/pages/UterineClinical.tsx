@@ -284,6 +284,7 @@ const UterineClinical = () => {
 
       const data: PredictionResponse = await res.json();
       setResults(data);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err: any) {
       const msg = err.message || "Failed to reach the prediction server.";
       setError(msg);
