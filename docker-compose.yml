@@ -1,0 +1,121 @@
+# ──────────────────────────────────────────────────────
+# GynoVision AI Suite — Docker Compose
+# ──────────────────────────────────────────────────────
+# Spins up 5 services:
+#   1. frontend          — Vite + React served via Nginx   (port 80)
+#   2. cervical-clinical — LightGBM Flask API              (port 5010)
+#   3. cervical-resnet50 — FastAI/PyTorch Flask API        (port 5009)
+#   4. uterine-tcga      — XGBoost + RF Flask API          (port 5008)
+#   5. uterine-clinical  — Logistic Regression Flask API   (port 5007)
+#
+# Usage:
+#   docker compose up --build        # Build & start all
+#   docker compose up --build -d     # Detached mode
+#   docker compose down              # Stop all
+# ──────────────────────────────────────────────────────
+
+services:
+  # ─── Frontend ─────────────────────────────────────
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gynovision-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      cervical-clinical:
+        condition: service_healthy
+      cervical-resnet50:
+        condition: service_healthy
+      uterine-tcga:
+        condition: service_healthy
+      uterine-clinical:
+        condition: service_healthy
+    networks:
+      - gynovision-network
+    restart: unless-stopped
+
+  # ─── Cervical Cancer Clinical (LightGBM) ─────────
+  cervical-clinical:
+    build:
+      context: ./backend/cervical-cancer-clinical-model
+      dockerfile: Dockerfile
+    container_name: gynovision-cervical-clinical
+    ports:
+      - "5010:5010"
+    volumes:
+      - ./backend/cervical-cancer-clinical-model/models:/app/models:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5010/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - gynovision-network
+    restart: unless-stopped
+
+  # ─── Cervical Cytology ResNet-50 (FastAI) ─────────
+  cervical-resnet50:
+    build:
+      context: ./backend/cervical-cancer-resnet50-model
+      dockerfile: Dockerfile
+    container_name: gynovision-cervical-resnet50
+    ports:
+      - "5009:5009"
+    volumes:
+      - ./backend/cervical-cancer-resnet50-model/models:/app/models:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5009/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - gynovision-network
+    restart: unless-stopped
+
+  # ─── Uterine Cancer TCGA (XGBoost + RF) ──────────
+  uterine-tcga:
+    build:
+      context: ./backend/uterine-cancer-TCGA-model
+      dockerfile: Dockerfile
+    container_name: gynovision-uterine-tcga
+    ports:
+      - "5008:5008"
+    volumes:
+      - ./backend/uterine-cancer-TCGA-model/model_artifacts:/app/model_artifacts:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5008/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - gynovision-network
+    restart: unless-stopped
+
+  # ─── Uterine Cancer Clinical (Logistic Regression) ─
+  uterine-clinical:
+    build:
+      context: ./backend/uterine-cancer-model
+      dockerfile: Dockerfile
+    container_name: gynovision-uterine-clinical
+    ports:
+      - "5007:5007"
+    volumes:
+      - ./backend/uterine-cancer-model/models:/app/models:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5007/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - gynovision-network
+    restart: unless-stopped
+
+networks:
+  gynovision-network:
+    driver: bridge
