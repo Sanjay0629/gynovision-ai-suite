@@ -20,6 +20,8 @@ import os
 # the deserialiser will choke unless we alias PosixPath → WindowsPath.
 if platform.system() == "Windows":
     pathlib.PosixPath = pathlib.WindowsPath
+else:
+    pathlib.WindowsPath = pathlib.PosixPath
 
 # ── 2. Patch: Mock IPython to prevent progress-bar crashes ──────────────────
 try:
@@ -75,6 +77,8 @@ from flask_cors import CORS  # noqa: E402
 from fastai.vision.all import PILImage  # noqa: E402
 from pathlib import Path  # noqa: E402
 import torch  # noqa: E402
+# Limit PyTorch threads to prevent OOM (exit code 137) in constrained Docker environments
+torch.set_num_threads(1)
 import torch.nn.functional as F  # noqa: E402
 import pickle  # noqa: E402
 import numpy as np  # noqa: E402
@@ -90,8 +94,7 @@ app = Flask(__name__)
 
 # Allow the React dev-server (usually :5173 for Vite or :3000 for CRA)
 CORS(app, resources={
-    r"/predict/*": {"origins": ["http://localhost:3000", "http://localhost:5173", "http://localhost:8080", "http://localhost:8081"]},
-    r"/health":    {"origins": "*"},
+    r"/*": {"origins": "*"}
 })
 
 # ── 6. Model loading ────────────────────────────────────────────────────────

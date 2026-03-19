@@ -319,13 +319,47 @@ gynovision-ai-suite/
 
 ## 🚀 Getting Started
 
-### Prerequisites
+### 🐳 The Easy Way (Docker - Recommended)
 
-- **Node.js** ≥ 18.x and **npm** (or **Bun**)
+The entire application (frontend + 4 backends) is fully containerized. You can launch the entire ecosystem with a single command!
+
+**Prerequisites:**
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running.
+
+**Steps:**
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Sanjay0629/gynovision-ai-suite.git
+   cd gynovision-ai-suite
+   ```
+
+2. **Important:** Place the required ML model artifacts (`.pkl`, `.joblib`) into their respective `backend/*/models/` directories. These are ignored by Git due to their size.
+
+3. Start the entire suite:
+   ```bash
+   # Option A: Using the provided Windows script (builds and opens browser automatically)
+   start.bat
+
+   # --- OR ---
+
+   # Option B: Using Docker Compose manually
+   docker compose up -d --build
+   ```
+
+The frontend will be instantly available at **http://localhost** and all 4 backends will be securely routed internally!
+
+---
+
+### 💻 The Manual Way (Local Development)
+
+<details>
+<summary>Click here to expand manual setup instructions</summary>
+
+**Prerequisites:**
+- **Node.js** ≥ 18.x and **npm**
 - **Python** ≥ 3.10
-- **Git**
 
-### 1. Frontend Setup
+#### 1. Frontend Setup
 
 ```bash
 # Clone the repository
@@ -341,78 +375,47 @@ npm run dev
 
 The frontend will be available at **`http://localhost:8080`**.
 
-### 2. Backend Setup
+#### 2. Backend Setup
 
 Each backend module runs independently. Set up each one in its own terminal:
 
-#### Module 1 — Uterine Cancer Clinical (Port 5007)
-
+**Module 1 — Uterine Cancer Clinical (Port 5007)**
 ```bash
 cd backend/uterine-cancer-model
-
-# Create and activate virtual environment
 python -m venv venv
-# Windows:
-venv\Scripts\activate
-# macOS/Linux:
-# source venv/bin/activate
-
-# Install dependencies
+venv\Scripts\activate       # or source venv/bin/activate
 pip install -r requirements.txt
-
-# Start the server
 python app.py
 ```
 
-#### Module 2 — Uterine Molecular TCGA (Port 5008)
-
+**Module 2 — Uterine Molecular TCGA (Port 5008)**
 ```bash
 cd backend/uterine-cancer-TCGA-model
-
 python -m venv venv
 venv\Scripts\activate       # or source venv/bin/activate
-
 pip install -r requirements.txt
 python app.py
 ```
 
-#### Module 3 — Cervical Cytology Imaging (Port 5009)
-
+**Module 3 — Cervical Cytology Imaging (Port 5009)**
 ```bash
 cd backend/cervical-cancer-resnet50-model
-
 python -m venv venv
 venv\Scripts\activate       # or source venv/bin/activate
-
 pip install -r requirements.txt
 python model_server.py
 ```
 
-> **Note:** This module requires **PyTorch** and **FastAI**. Installation may take longer and requires ~2 GB for the PyTorch dependencies. Ensure you have the appropriate CUDA version if using GPU acceleration.
-
-#### Module 4 — Cervical Cancer Clinical (Port 5010)
-
+**Module 4 — Cervical Cancer Clinical (Port 5010)**
 ```bash
 cd backend/cervical-cancer-clinical-model
-
 python -m venv venv
 venv\Scripts\activate       # or source venv/bin/activate
-
 pip install -r requirements.txt
 python app.py
 ```
 
-#### Verify Backend Health
-
-Once a backend server is running, verify it with:
-
-```bash
-# Example: Uterine Clinical (port 5007)
-curl http://localhost:5007/health
-
-# Expected response:
-# {"model": "uterine_cancer_lr", "status": "healthy"}
-```
+</details>
 
 ---
 

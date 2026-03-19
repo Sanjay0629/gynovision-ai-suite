@@ -33,9 +33,16 @@ Place the trained artifacts in `models/` (the repository expects these names):
 The `implementation_plan.md` includes instructions for exporting and copying
 these artifacts from training outputs.
 
-## Running the server
+## 🐳 Running with Docker (Recommended)
 
-Start the API with:
+This service is fully containerized as part of the GynoVision AI Suite docker-compose network. 
+Simply run `docker compose up --build` from the root directory to start all services simultaneously.
+
+---
+
+## 💻 Manual Local Setup
+
+Start the API locally with:
 
 ```bash
 python app.py

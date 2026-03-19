@@ -10,11 +10,19 @@ This service integrates two high-performance models:
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### 🐳 Running with Docker (Recommended)
+This service is fully containerized as part of the GynoVision AI Suite docker-compose network.
+Simply run `docker compose up --build` from the root directory to start all services simultaneously.
+
+---
+
+### 💻 Manual Local Setup
+
+#### Prerequisites
 - Python 3.8+
 - Virtual environment (recommended)
 
-### Installation
+#### Installation
 1. Navigate to the microservice directory:
    ```bash
    cd backend/uterine-cancer-TCGA-model

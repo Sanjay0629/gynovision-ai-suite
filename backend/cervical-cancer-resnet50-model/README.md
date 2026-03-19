@@ -42,9 +42,16 @@ locations (in order):
 If you have a trained learner (exported via `learn.export()`), place the file
 as `models/export.pkl` before starting the server.
 
-## Running the server
+## 🐳 Running with Docker (Recommended)
 
-Start the API with:
+This service is fully containerized as part of the GynoVision AI Suite docker-compose network. 
+Simply run `docker compose up --build` from the root directory to start all services simultaneously.
+
+---
+
+## 💻 Manual Local Setup
+
+Start the API locally with:
 
 ```bash
 python model_server.py
