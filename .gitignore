@@ -60,7 +60,6 @@ coverage.xml
 # ML Model Artifacts (large binary files)
 # ────────────────────────────────────────────
 *.pkl
-*.joblib
 *.h5
 *.hdf5
 *.pt
