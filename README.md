@@ -333,9 +333,7 @@ The entire application (frontend + 4 backends) is fully containerized. You can l
    cd gynovision-ai-suite
    ```
 
-2. **Important:** Place the required ML model artifacts (`.pkl`, `.joblib`) into their respective `backend/*/models/` directories. These are ignored by Git due to their size.
-
-3. Start the entire suite:
+2. Start the entire suite:
    ```bash
    # Option A: Using the provided Windows script (builds and opens browser automatically)
    start.bat

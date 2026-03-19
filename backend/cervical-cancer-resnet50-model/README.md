@@ -33,14 +33,7 @@ because some saved FastAI learners reference older module paths.
 
 ## Model artifact
 
-The server looks for a FastAI export file named `export.pkl` in one of these
-locations (in order):
-
-- `models/export.pkl` (recommended)
-- `export.pkl` next to `model_server.py`
-
-If you have a trained learner (exported via `learn.export()`), place the file
-as `models/export.pkl` before starting the server.
+The pre-trained FastAI learner (`export.pkl`) is already included in the `models/` directory. The server automatically loads it on startup.
 
 ## 🐳 Running with Docker (Recommended)
 

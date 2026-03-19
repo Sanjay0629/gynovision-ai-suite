@@ -24,14 +24,11 @@ Key libraries: `flask`, `joblib`, `scikit-learn`, `lightgbm`, `pandas`, `numpy`,
 
 ## Model artifacts
 
-Place the trained artifacts in `models/` (the repository expects these names):
+The pre-trained models and preprocessing pipelines are already included in the `models/` directory:
 
 - `final_model.joblib` — calibrated classifier (used for `predict_proba`).
 - `preprocessing_pipeline.joblib` — sklearn pipeline used to transform frontend inputs.
 - `thresholds.json` — JSON with keys `t1` and `t2` defining risk cutoffs.
-
-The `implementation_plan.md` includes instructions for exporting and copying
-these artifacts from training outputs.
 
 ## 🐳 Running with Docker (Recommended)
 
