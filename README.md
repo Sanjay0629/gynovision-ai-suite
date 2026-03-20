@@ -335,12 +335,15 @@ The entire application (frontend + 4 backends) is fully containerized. You can l
 
 2. Start the entire suite:
    ```bash
-   # Option A: Using the provided Windows script (builds and opens browser automatically)
+   # Option A: Windows Users (builds and opens browser automatically)
    start.bat
+
+   # Option B: Mac/Linux Users (builds and opens browser automatically)
+   bash start.sh
 
    # --- OR ---
 
-   # Option B: Using Docker Compose manually
+   # Option C: Using Docker Compose manually
    docker compose up -d --build
    ```
 
