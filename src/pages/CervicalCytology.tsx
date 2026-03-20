@@ -65,7 +65,9 @@ const CervicalCytology = () => {
     const file = fileRef.current?.files?.[0];
     if (!preview || !file) return;
 
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setTimeout(() => {
+      document.getElementById("prediction-results")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
     setLoading(true);
     setResults(null);
     setError(null);
@@ -374,7 +376,7 @@ const CervicalCytology = () => {
           </div>
 
           {/* Results */}
-          <div className="space-y-6">
+          <div id="prediction-results" className="space-y-6">
             <GlassCard hover={false}>
               <ResultsPanel />
             </GlassCard>

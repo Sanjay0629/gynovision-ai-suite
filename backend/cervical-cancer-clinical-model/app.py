@@ -13,111 +13,122 @@ from sklearn.preprocessing import RobustScaler
 # Custom transformer classes (must be in __main__ so the pickle can find them)
 # ══════════════════════════════════════════════════════════════════════════════
 
-class STDAtomicTransformer(BaseEstimator, TransformerMixin):
-    """Impute STD fields, engineer summary features, drop raw STD sub-cols."""
+from sklearn.experimental import enable_iterative_imputer
+from sklearn.impute import IterativeImputer
+from sklearn.linear_model import BayesianRidge
 
-    _STD_BINARY = [
-        "STDs:condylomatosis", "STDs:cervical condylomatosis",
-        "STDs:vaginal condylomatosis", "STDs:vulvo-perineal condylomatosis",
-        "STDs:syphilis", "STDs:pelvic inflammatory disease",
-        "STDs:genital herpes", "STDs:molluscum contagiosum",
-        "STDs:AIDS", "STDs:HIV", "STDs:Hepatitis B", "STDs:HPV",
-    ]
-    _HIGH_RISK = ["STDs:HIV", "STDs:AIDS", "STDs:Hepatitis B", "STDs:HPV"]
+# Global constants needed for transforms during prediction
+RAW_STD_INDICATOR_COLS = [
+    "STDs:condylomatosis", "STDs:cervical condylomatosis",
+    "STDs:vaginal condylomatosis", "STDs:vulvo-perineal condylomatosis",
+    "STDs:syphilis", "STDs:pelvic inflammatory disease",
+    "STDs:genital herpes", "STDs:molluscum contagiosum",
+    "STDs:AIDS", "STDs:HIV", "STDs:Hepatitis B", "STDs:HPV"
+]
+STD_DURATION_COLS = [
+    "STDs: Time since first diagnosis", "STDs: Time since last diagnosis"
+]
+STD_COUNT_COLS = ["STDs (number)", "STDs: Number of diagnosis"]
+
+def _sanitize_col(name):
+    import re
+    return re.sub(r'[^A-Za-z0-9_]+', '_', str(name)).strip('_')
+
+
+class STDAtomicTransformer(BaseEstimator, TransformerMixin):
+    def __init__(self):
+        self.median_values_ = {}
 
     def fit(self, X, y=None):
         return self
 
-    def transform(self, X):
-        X = X.copy()
-        binary_std_cols = [c for c in self._STD_BINARY if c in X.columns]
-        high_risk_cols  = [c for c in self._HIGH_RISK  if c in X.columns]
+    def transform(self, X, y=None):
+        df = X.copy() if isinstance(X, pd.DataFrame) else pd.DataFrame(X)
+        raw_std_cols_present = [c for c in RAW_STD_INDICATOR_COLS if c in df.columns]
 
-        # 1. Impute / zero-out STD fields
-        for idx in X.index:
-            std_flag = X.loc[idx, "STDs"] if "STDs" in X.columns else np.nan
-            if std_flag == 0:
-                for c in binary_std_cols:
-                    X.loc[idx, c] = 0.0
-                for c in self.median_values_:
-                    if c in X.columns:
-                        X.loc[idx, c] = 0.0
-            else:
-                for c, med in self.median_values_.items():
-                    if c in X.columns and pd.isna(X.loc[idx, c]):
-                        X.loc[idx, c] = med
-                for c in binary_std_cols:
-                    if pd.isna(X.loc[idx, c]):
-                        X.loc[idx, c] = 0.0
+        if raw_std_cols_present:
+            any_std_mask = (df[raw_std_cols_present].fillna(0).max(axis=1) > 0)
+        else:
+            any_std_mask = pd.Series(False, index=df.index)
 
-        # 2. Engineer summary features
-        X["Any_STD"]      = (X[binary_std_cols].sum(axis=1) > 0).astype(int)
-        X["STD_Burden"]   = X[binary_std_cols].sum(axis=1).astype(int)
-        X["High_Risk_STD"] = (X[high_risk_cols].sum(axis=1) > 0).astype(int)
+        cols_to_impute = [c for c in STD_DURATION_COLS + STD_COUNT_COLS if c in df.columns]
+        for col in cols_to_impute:
+            df.loc[~any_std_mask, col] = 0
+            mask = any_std_mask & df[col].isna()
+            if mask.any():
+                df.loc[mask, col] = self.median_values_.get(col, 0)
 
-        # 3. Drop raw sub-columns + time columns
-        drop = binary_std_cols + [
-            c for c in ["STDs: Time since first diagnosis",
-                        "STDs: Time since last diagnosis"] if c in X.columns
-        ]
-        X = X.drop(columns=drop)
-        return X
+        cols_to_drop = [c for c in raw_std_cols_present + STD_DURATION_COLS if c in df.columns]
+        df.drop(columns=cols_to_drop, inplace=True, errors="ignore")
+        return df
 
 
 class MissingnessIndicatorTransformer(BaseEstimator, TransformerMixin):
-    """Create binary ``<col>_missing`` indicators for selected columns."""
+    def __init__(self, columns=None):
+        self.columns = columns or []
 
     def fit(self, X, y=None):
         return self
 
-    def transform(self, X):
-        X = X.copy()
+    def transform(self, X, y=None):
+        df = X.copy() if isinstance(X, pd.DataFrame) else pd.DataFrame(X)
         for col in self.columns:
-            if col in X.columns:
-                X[col + "_missing"] = X[col].isna().astype(int)
-        return X
+            if col in df.columns:
+                df[f"{col}_missing"] = df[col].isna().astype(int)
+        return df
 
 
-class GeneralImputerTransformer(BaseEstimator, TransformerMixin):
-    """Impute NaN: median for continuous cols, mode for binary/categorical."""
+class IterativeImputerTransformer(BaseEstimator, TransformerMixin):
+    def __init__(self, max_iter=10, random_state=42):
+        self.max_iter = max_iter
+        self.random_state = random_state
+        self.iterative_imputer_ = None
+        self.numeric_cols_ = []
+        self.mode_values_ = {}
 
     def fit(self, X, y=None):
         return self
 
-    def transform(self, X):
-        X = X.copy()
-        for col, med in self.median_values_.items():
-            if col in X.columns:
-                X[col] = X[col].fillna(med)
-        for col, mode in self.mode_values_.items():
-            if col in X.columns:
-                X[col] = X[col].fillna(mode)
-        return X
+    def transform(self, X, y=None):
+        df = X.copy() if isinstance(X, pd.DataFrame) else pd.DataFrame(X)
+        if self.numeric_cols_ and self.iterative_imputer_ is not None:
+            cols_present = [c for c in self.numeric_cols_ if c in df.columns]
+            if cols_present:
+                imputed = self.iterative_imputer_.transform(df[cols_present])
+                df[cols_present] = imputed
+
+        for col, val in self.mode_values_.items():
+            if col in df.columns:
+                df[col] = df[col].fillna(val)
+        return df
 
 
 class ColumnNameSanitizer(BaseEstimator, TransformerMixin):
-    """Replace spaces / special chars in column names with underscores."""
-
     def fit(self, X, y=None):
         return self
 
-    def transform(self, X):
-        X = X.copy()
-        X.columns = [re.sub(r"[^A-Za-z0-9_]+", "_", c).strip("_") for c in X.columns]
-        return X
+    def transform(self, X, y=None):
+        df = X.copy() if isinstance(X, pd.DataFrame) else pd.DataFrame(X)
+        df.columns = [_sanitize_col(c) for c in df.columns]
+        return df
 
 
 class RobustScalerTransformer(BaseEstimator, TransformerMixin):
-    """Apply a fitted sklearn RobustScaler only to the numeric columns."""
+    def __init__(self):
+        self.scaler_ = RobustScaler()
+        self.numeric_cols_ = []
 
     def fit(self, X, y=None):
         return self
 
-    def transform(self, X):
-        X = X.copy()
-        cols = [c for c in self.numeric_cols_ if c in X.columns]
-        X[cols] = self.scaler_.transform(X[cols])
-        return X
+    def transform(self, X, y=None):
+        df = X.copy() if isinstance(X, pd.DataFrame) else pd.DataFrame(X)
+        if self.numeric_cols_:
+            cols_present = [c for c in self.numeric_cols_ if c in df.columns]
+            if cols_present:
+                scaled = self.scaler_.transform(df[cols_present])
+                df[cols_present] = scaled
+        return df
 
 
 # ══════════════════════════════════════════════════════════════════════════════

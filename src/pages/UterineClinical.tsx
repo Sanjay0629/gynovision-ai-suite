@@ -284,7 +284,9 @@ const UterineClinical = () => {
 
       const data: PredictionResponse = await res.json();
       setResults(data);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      setTimeout(() => {
+        document.getElementById("prediction-results")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
     } catch (err: any) {
       const msg = err.message || "Failed to reach the prediction server.";
       setError(msg);
@@ -461,7 +463,7 @@ const UterineClinical = () => {
           </GlassCard>
 
           {/* Results */}
-          <div className="space-y-6">
+          <div id="prediction-results" className="space-y-6">
             <GlassCard hover={false}>
               <ResultsPanel results={results} loading={loading} />
               {results && !loading && (

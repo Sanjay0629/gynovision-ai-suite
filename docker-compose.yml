@@ -45,7 +45,7 @@ services:
     ports:
       - "5010:5010"
     volumes:
-      - ./backend/cervical-cancer-clinical-model/models:/app/models:ro
+      - ./backend/cervical-cancer-clinical-model:/app
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5010/health')"]
       interval: 30s

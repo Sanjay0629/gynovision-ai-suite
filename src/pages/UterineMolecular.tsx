@@ -146,7 +146,9 @@ const UterineMolecular = () => {
 
       const data: PredictionResponse = await res.json();
       setResults(data);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      setTimeout(() => {
+        document.getElementById("prediction-results")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
       toast.success("Prediction generated successfully!");
     } catch (err: any) {
       const msg = err.message || "Failed to reach the prediction server.";
@@ -318,7 +320,7 @@ const UterineMolecular = () => {
           </GlassCard>
 
           {/* ── Results Panel ── */}
-          <div className="space-y-6">
+          <div id="prediction-results" className="space-y-6">
             <GlassCard hover={false}>
               <h3 className="font-display font-semibold text-lg text-foreground mb-6">
                 Prediction Results

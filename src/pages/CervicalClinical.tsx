@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Brain, Loader2, CheckCircle2, AlertTriangle, Activity, Shield, FileDown } from "lucide-react";
 import { generateCervicalClinicalReport } from "@/utils/generateCervicalClinicalReport";
@@ -125,12 +125,33 @@ const CervicalClinical = () => {
   const [patientId, setPatientId] = useState("");
   const [patientAge, setPatientAge] = useState("");
 
+  const resultsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (results && !loading) {
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    }
+  }, [results, loading]);
+
   const handleChange = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!form["Age"] || !form["Number of sexual partners"] || !form["First sexual intercourse"] || !form["Num of pregnancies"]) {
+      toast.error("Please fill in the core demographic fields (Age, Sexual Partners, First Intercourse, Pregnancies) before predicting.");
+      return;
+    }
+
+    if (!form["Smokes"] || !form["Hormonal Contraceptives"] || !form["IUD"] || !form["STDs"]) {
+      toast.error("Please answer all the Yes/No questions (Smokes, Contraceptives, IUD, STDs) before predicting.");
+      return;
+    }
+
     setError(null);
     setLoading(true);
     setResults(null);
@@ -139,8 +160,6 @@ const CervicalClinical = () => {
     for (const [key, val] of Object.entries(form)) {
       payload[key] = val === "" ? null : parseFloat(val);
     }
-
-    window.scrollTo({ top: 0, behavior: "smooth" });
 
     try {
       const res = await fetch(API_URL, {
@@ -288,7 +307,7 @@ const CervicalClinical = () => {
           </GlassCard>
 
           {/* ── Results ── */}
-          <div className="space-y-6">
+          <div id="prediction-results" ref={resultsRef} className="space-y-6">
             <GlassCard hover={false}>
               <h3 className="font-display font-semibold text-lg text-foreground mb-6">Prediction Results</h3>
 
