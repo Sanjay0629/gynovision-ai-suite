@@ -381,7 +381,7 @@ The frontend will be available at **`http://localhost:8080`**.
 Each backend module runs independently. Set up each one in its own terminal:
 
 **Module 1 — Uterine Cancer Clinical (Port 5007)**
-```bash
+```bash  
 cd backend/uterine-cancer-model
 python -m venv venv
 venv\Scripts\activate       # or source venv/bin/activate
