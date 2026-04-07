@@ -15,6 +15,18 @@ import shap
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
+# ── Gemini LLM Integration ───────────────────────────────────────────────────
+from google import genai
+from google.genai import types as genai_types
+
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+_gemini_client = None
+if GEMINI_API_KEY:
+    _gemini_client = genai.Client(api_key=GEMINI_API_KEY)
+    print("[INFO]  Gemini API key configured — LLM CDS enabled")
+else:
+    print("[WARN]  No GEMINI_API_KEY found — using fallback CDS rules")
+
 # ──────────────────────────────────────────────
 #  Paths
 # ──────────────────────────────────────────────
@@ -235,6 +247,88 @@ def _generate_recommendations(data: dict, risk_tier: str) -> list[str]:
     return recs
 
 
+def _call_gemini(prompt: str, fallback):
+    """Call Gemini API with retry. Returns parsed JSON on success, fallback on failure."""
+    if not _gemini_client:
+        return fallback
+    import time
+    for attempt in range(3):
+        try:
+            response = _gemini_client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
+                config=genai_types.GenerateContentConfig(
+                    temperature=0.2,
+                    max_output_tokens=1024,
+                    response_mime_type="application/json",
+                    thinking_config=genai_types.ThinkingConfig(thinking_budget=0),
+                ),
+            )
+            result = json.loads(response.text)
+            # Validate structure
+            if isinstance(fallback, list):
+                assert isinstance(result, list) and len(result) > 0
+            elif isinstance(fallback, dict):
+                assert "summary" in result and "actions" in result
+            return result
+        except Exception as e:
+            err_str = str(e)
+            if ("503" in err_str or "429" in err_str or "UNAVAILABLE" in err_str) and attempt < 2:
+                print(f"[LLM RETRY] Attempt {attempt+1} failed ({err_str[:80]}), retrying in {2 ** attempt}s...")
+                time.sleep(2 ** attempt)
+                continue
+            print(f"[LLM WARNING] Gemini call failed, using fallback: {e}")
+            return fallback
+
+
+def _generate_llm_cds_uterine(data: dict, risk_tier: str, proba: float, shap_entries: list) -> list[str]:
+    """Generate personalised uterine cancer CDS using Gemini LLM."""
+    fallback = _generate_recommendations(data, risk_tier)
+
+    # Build SHAP summary
+    shap_summary = "; ".join(
+        f"{e['feature']} ({e['direction']}, SHAP={e['shap_value']})"
+        for e in shap_entries
+    ) or "No significant features detected"
+
+    age = data.get("Age", "unknown")
+    bmi = data.get("BMI", "unknown")
+    menopause = data.get("MenopauseStatus", "unknown")
+    bleeding = data.get("AbnormalBleeding", "No")
+    thickness = data.get("ThickEndometrium", "unknown")
+    ca125 = data.get("CA125_Level", "unknown")
+    diabetes = data.get("Diabetes", "No")
+    estrogen = data.get("EstrogenTherapy", "No")
+    family = data.get("FamilyHistoryCancer", "No")
+    smoking = data.get("Smoking", "No")
+
+    prompt = f"""You are a clinical decision support assistant for uterine/endometrial cancer screening.
+
+Patient Profile:
+- Age: {age}, BMI: {bmi}, Menopausal Status: {menopause}
+- Risk Tier: {risk_tier} (Probability: {proba * 100:.1f}%)
+- Abnormal Bleeding: {bleeding}, Endometrial Thickness: {thickness}mm
+- CA-125: {ca125} U/mL, Diabetes: {diabetes}, Estrogen Therapy: {estrogen}
+- Family History of Cancer: {family}, Smoking: {smoking}
+- Key Risk Drivers (SHAP): {shap_summary}
+
+Task:
+Provide personalised uterine cancer clinical decision support as a JSON list of recommendation strings.
+Follow ESGO/RCOG/ACOG uterine cancer screening guidelines.
+Do NOT recommend specific drugs or dosages.
+Personalize recommendations based on the patient's specific risk factors and clinical values.
+Provide 3–6 actionable recommendations.
+
+Return exactly this JSON format (a JSON array of strings):
+[
+  "<recommendation 1>",
+  "<recommendation 2>",
+  "<recommendation 3>"
+]"""
+
+    return _call_gemini(prompt, fallback)
+
+
 # ──────────────────────────────────────────────
 #  Risk tier helpers
 # ──────────────────────────────────────────────
@@ -320,8 +414,8 @@ def predict():
         # ---- SHAP ----
         shap_explanation = _compute_shap_explanation(df, X_transformed, top_n=5)
 
-        # ---- clinical recommendations ----
-        recommendations = _generate_recommendations(data, risk_tier)
+        # ---- clinical recommendations (LLM-powered with fallback) ----
+        recommendations = _generate_llm_cds_uterine(data, risk_tier, proba, shap_explanation)
 
         # ---- response ----
         return jsonify({

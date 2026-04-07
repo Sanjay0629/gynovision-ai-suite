@@ -15,6 +15,18 @@ import shap
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
+# ── Gemini LLM Integration ───────────────────────────────────────────────────
+from google import genai
+from google.genai import types as genai_types
+
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+_gemini_client = None
+if GEMINI_API_KEY:
+    _gemini_client = genai.Client(api_key=GEMINI_API_KEY)
+    print("[INFO]  Gemini API key configured — LLM CDS enabled")
+else:
+    print("[WARN]  No GEMINI_API_KEY found — using fallback CDS rules")
+
 # ──────────────────────────────────────────────
 #  Paths & Artefact Loading
 # ──────────────────────────────────────────────
@@ -231,8 +243,131 @@ def _compute_shap(model, X_df, is_tree=True, top_n=5) -> list:
         return []
 
 # ──────────────────────────────────────────────
-#  Flask Application
+#  Clinical Decision Support (LLM + Fallback)
 # ──────────────────────────────────────────────
+
+TCGA_CDS_FALLBACK = {
+    "UCEC_POLE": {
+        "summary": "POLE ultra-mutated subtype — associated with excellent prognosis.",
+        "actions": [
+            "Discuss POLE mutation implications with oncology team.",
+            "High mutational burden may predict immunotherapy response.",
+            "Follow standard surgical staging protocols.",
+        ],
+    },
+    "UCEC_MSI": {
+        "summary": "MSI-High subtype detected — Lynch syndrome screening warranted.",
+        "actions": [
+            "Refer for Lynch syndrome genetic counselling.",
+            "Consider immunotherapy eligibility assessment.",
+            "Family members may benefit from genetic screening.",
+        ],
+    },
+    "UCEC_CN_LOW": {
+        "summary": "Copy number-low subtype — intermediate clinical course expected.",
+        "actions": [
+            "Standard adjuvant therapy per tumour grade and stage.",
+            "Regular gynaecologic oncology follow-up.",
+            "Monitor for recurrence with clinical imaging.",
+        ],
+    },
+    "UCEC_CN_HIGH": {
+        "summary": "Copy number-high (serous-like) subtype — aggressive clinical behaviour expected.",
+        "actions": [
+            "Urgent gynaecologic oncology referral.",
+            "Consider platinum-based chemotherapy evaluation.",
+            "Molecular tumour board discussion recommended.",
+        ],
+    },
+}
+
+
+def _call_gemini(prompt: str, fallback):
+    """Call Gemini API with retry. Returns parsed JSON on success, fallback on failure."""
+    if not _gemini_client:
+        return fallback
+    import time
+    for attempt in range(3):
+        try:
+            response = _gemini_client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
+                config=genai_types.GenerateContentConfig(
+                    temperature=0.2,
+                    max_output_tokens=1024,
+                    response_mime_type="application/json",
+                    thinking_config=genai_types.ThinkingConfig(thinking_budget=0),
+                ),
+            )
+            result = json.loads(response.text)
+            if isinstance(fallback, dict):
+                assert "summary" in result and "actions" in result
+                assert isinstance(result["actions"], list) and len(result["actions"]) > 0
+            return result
+        except Exception as e:
+            err_str = str(e)
+            if ("503" in err_str or "429" in err_str or "UNAVAILABLE" in err_str) and attempt < 2:
+                print(f"[LLM RETRY] Attempt {attempt+1} failed ({err_str[:80]}), retrying in {2 ** attempt}s...")
+                time.sleep(2 ** attempt)
+                continue
+            print(f"[LLM WARNING] Gemini call failed, using fallback: {e}")
+            return fallback
+
+
+def _generate_llm_cds_tcga(subtype, survival_pred, risk_tier, proba_deceased, shap_entries, patient_data):
+    """Generate personalised molecular CDS using Gemini LLM."""
+    fallback = TCGA_CDS_FALLBACK.get(subtype, {
+        "summary": f"Molecular subtype '{subtype}' identified.",
+        "actions": ["Discuss results with oncology team."],
+    })
+
+    shap_summary = "; ".join(
+        f"{e['feature']} ({e['direction']}, SHAP={e['shap_value']})"
+        for e in shap_entries
+    ) or "No significant features detected"
+
+    mutation_count = patient_data.get("mutation_count", "unknown")
+    fga = patient_data.get("fraction_genome_altered", "unknown")
+    msi_mantis = patient_data.get("msi_mantis_score", "unknown")
+    msisensor = patient_data.get("msisensor_score", "unknown")
+    age = patient_data.get("diagnosis_age", "unknown")
+    race = patient_data.get("race_category", "unknown")
+
+    prompt = f"""You are a clinical decision support assistant for uterine cancer molecular profiling.
+
+Molecular Profile:
+- TCGA Molecular Subtype: {subtype}
+- Survival Prediction: {survival_pred} (Probability of adverse outcome: {proba_deceased * 100:.1f}%)
+- Survival Risk Tier: {risk_tier}
+- Mutation Count: {mutation_count}, Fraction Genome Altered: {fga}
+- MSI MANTIS Score: {msi_mantis}, MSIsensor Score: {msisensor}
+- Age at Diagnosis: {age}, Race/Ethnicity: {race}
+- Key Molecular Drivers (SHAP): {shap_summary}
+
+TCGA Subtype Meanings:
+- UCEC_POLE: POLE ultra-mutated, excellent prognosis
+- UCEC_MSI: Microsatellite instable, moderate prognosis, Lynch syndrome association
+- UCEC_CN_LOW: Copy number low, intermediate prognosis
+- UCEC_CN_HIGH: Copy number high (serous-like), poor prognosis
+
+Task:
+Provide molecular oncology decision support as JSON.
+Reference ESGO/ESMO 2020 uterine cancer molecular classification guidelines.
+Do NOT recommend specific drugs or dosages.
+Personalize based on the patient's molecular profile and risk factors.
+Provide 3–5 actionable recommendations.
+
+Return exactly this JSON format:
+{{
+  "summary": "<1–2 sentence molecular profile interpretation>",
+  "actions": [
+    "<action 1>",
+    "<action 2>",
+    "<action 3>"
+  ]
+}}"""
+
+    return _call_gemini(prompt, fallback)
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -317,6 +452,10 @@ def predict():
                 "risk_tier": s_risk_tier
             },
             "shap_explanation": shap_explanation,
+            "cds_guidance": _generate_llm_cds_tcga(
+                subtype_name, survival_pred, s_risk_tier,
+                float(proba_b), shap_explanation, data
+            ),
             "disclaimer": "This is a research prototype using TCGA data. Not clinically validated for patient care."
         })
 

@@ -9,3 +9,4 @@ pillow
 werkzeug
 numpy
 matplotlib
+google-genai>=1.0.0

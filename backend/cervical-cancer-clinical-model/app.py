@@ -8,6 +8,18 @@ from flask_cors import CORS
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.preprocessing import RobustScaler
 
+# ── Gemini LLM Integration ───────────────────────────────────────────────────
+from google import genai
+from google.genai import types as genai_types
+
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+_gemini_client = None
+if GEMINI_API_KEY:
+    _gemini_client = genai.Client(api_key=GEMINI_API_KEY)
+    print("[INFO]  Gemini API key configured — LLM CDS enabled")
+else:
+    print("[WARN]  No GEMINI_API_KEY found — using fallback CDS rules")
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Custom transformer classes (must be in __main__ so the pickle can find them)
@@ -152,7 +164,7 @@ _cal        = model.calibrated_classifiers_[0]
 _base_model = _cal.estimator
 _explainer  = shap.TreeExplainer(_base_model)
 
-# ── Clinical Decision Support rules ──────────────────────────────────────────
+# ── Clinical Decision Support rules (fallback) ──────────────────────────────
 CDS_RULES = {
     "Low Risk": {
         "summary": "Patient is at low risk for cervical cancer.",
@@ -179,6 +191,91 @@ CDS_RULES = {
         ],
     },
 }
+
+
+def _call_gemini(prompt: str, fallback):
+    """Call Gemini API with retry. Returns parsed JSON on success, fallback on failure."""
+    if not _gemini_client:
+        return fallback
+    import time
+    for attempt in range(3):
+        try:
+            response = _gemini_client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
+                config=genai_types.GenerateContentConfig(
+                    temperature=0.2,
+                    max_output_tokens=1024,
+                    response_mime_type="application/json",
+                    thinking_config=genai_types.ThinkingConfig(thinking_budget=0),
+                ),
+            )
+            result = json.loads(response.text)
+            # Validate structure
+            if isinstance(fallback, dict):
+                assert "summary" in result and "actions" in result
+                assert isinstance(result["actions"], list) and len(result["actions"]) > 0
+            return result
+        except Exception as e:
+            err_str = str(e)
+            if ("503" in err_str or "429" in err_str or "UNAVAILABLE" in err_str) and attempt < 2:
+                print(f"[LLM RETRY] Attempt {attempt+1} failed ({err_str[:80]}), retrying in {2 ** attempt}s...")
+                time.sleep(2 ** attempt)
+                continue
+            print(f"[LLM WARNING] Gemini call failed, using fallback: {e}")
+            return fallback
+
+
+def _generate_llm_cds_cervical(patient_data, risk_label, cancer_prob, shap_entries):
+    """Generate personalised CDS using Gemini LLM."""
+    fallback = CDS_RULES[risk_label]
+
+    # Build SHAP summary
+    shap_summary = "; ".join(
+        f"{e['feature'].replace('_', ' ')} ({e['direction']}, SHAP={e['shap_value']})"
+        for e in shap_entries
+    ) or "No significant features detected"
+
+    # Extract key patient values
+    age = patient_data.get("Age", "unknown")
+    smokes = "Yes" if patient_data.get("Smokes") == 1 else "No"
+    hc = "Yes" if patient_data.get("Hormonal Contraceptives") == 1 else "No"
+    iud = "Yes" if patient_data.get("IUD") == 1 else "No"
+    stds = "Yes" if patient_data.get("STDs") == 1 else "No"
+    hpv = "Yes" if patient_data.get("STDs:HPV") == 1 else "No"
+    hiv = "Yes" if patient_data.get("STDs:HIV") == 1 else "No"
+    num_partners = patient_data.get("Number of sexual partners", "unknown")
+    first_intercourse = patient_data.get("First sexual intercourse", "unknown")
+
+    prompt = f"""You are a clinical decision support assistant for gynaecological oncology.
+
+Patient Profile:
+- Age: {age}
+- Risk Level: {risk_label} (Cancer Probability: {cancer_prob * 100:.1f}%)
+- Key Risk Drivers (SHAP): {shap_summary}
+- Smoking: {smokes}, Hormonal Contraceptives: {hc}, IUD: {iud}
+- STD History: {stds}, HPV: {hpv}, HIV: {hiv}
+- Number of Sexual Partners: {num_partners}
+- Age at First Intercourse: {first_intercourse}
+
+Task:
+Provide clinical decision support as JSON ONLY. No preamble or explanation outside the JSON.
+Follow evidence-based cervical cancer screening guidelines (ASCCP 2019, WHO 2021).
+Do NOT recommend specific medications or drug dosages.
+Personalize recommendations based on the patient's specific risk factors.
+Provide 3–5 actionable recommendations.
+
+Return exactly this JSON format:
+{{
+  "summary": "<1–2 sentence personalised patient risk summary>",
+  "actions": [
+    "<action 1>",
+    "<action 2>",
+    "<action 3>"
+  ]
+}}"""
+
+    return _call_gemini(prompt, fallback)
 
 REQUIRED_FIELDS = [
     "Age", "Number of sexual partners", "First sexual intercourse",
@@ -250,8 +347,8 @@ def predict():
         feature_names    = list(X_processed.columns)
         shap_explanation = get_shap_explanation(X_processed, feature_names)
 
-        # Clinical Decision Support
-        cds = CDS_RULES[risk_label]
+        # Clinical Decision Support (LLM-powered with fallback)
+        cds = _generate_llm_cds_cervical(row, risk_label, prob, shap_explanation)
 
         return jsonify({
             "cancer_probability": round(prob, 4),

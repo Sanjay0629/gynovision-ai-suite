@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Dna, Loader2, Activity, HeartPulse, AlertCircle, Download } from "lucide-react";
+import { Dna, Loader2, Activity, HeartPulse, AlertCircle, Download, CheckCircle2 } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import GlassCard from "@/components/GlassCard";
 import DisclaimerBox from "@/components/DisclaimerBox";
@@ -39,6 +39,10 @@ interface PredictionResponse {
     risk_tier: string;
   };
   shap_explanation: ShapValue[];
+  cds_guidance?: {
+    summary: string;
+    actions: string[];
+  };
   disclaimer: string;
 }
 
@@ -411,6 +415,22 @@ const UterineMolecular = () => {
                           );
                         })}
                       </div>
+                    </div>
+                  )}
+
+                  {/* LLM Clinical Decision Support */}
+                  {results.cds_guidance && (
+                    <div className="rounded-xl bg-muted/50 p-4 space-y-3">
+                      <h4 className="text-sm font-semibold text-foreground">Clinical Decision Support</h4>
+                      <p className="text-sm text-muted-foreground">{results.cds_guidance.summary}</p>
+                      <ul className="space-y-2">
+                        {results.cds_guidance.actions.map((action, i) => (
+                          <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                            <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                            {action}
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   )}
                 </motion.div>

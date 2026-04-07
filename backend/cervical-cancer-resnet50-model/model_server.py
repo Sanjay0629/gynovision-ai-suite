@@ -88,6 +88,19 @@ from PIL import Image as PILImageModule  # noqa: E402
 import matplotlib  # noqa: E402
 matplotlib.use("Agg")  # non-interactive backend
 import matplotlib.cm as cm  # noqa: E402
+import json  # noqa: E402
+
+# ── Gemini LLM Integration ───────────────────────────────────────────────────
+from google import genai  # noqa: E402
+from google.genai import types as genai_types  # noqa: E402
+
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+_gemini_client = None
+if GEMINI_API_KEY:
+    _gemini_client = genai.Client(api_key=GEMINI_API_KEY)
+    print("[INFO]  Gemini API key configured — LLM CDS enabled")
+else:
+    print("[WARN]  No GEMINI_API_KEY found — using fallback CDS rules")
 
 # ── 5. Flask app setup ──────────────────────────────────────────────────────
 app = Flask(__name__)
@@ -252,7 +265,107 @@ def overlay_gradcam(original_pil_img, cam, alpha=0.5):
     return base64.b64encode(buf.read()).decode("utf-8")
 
 
-# ── 7. Routes ────────────────────────────────────────────────────────────────
+# ── 7. Clinical Decision Support (LLM + Fallback) ────────────────────────────
+
+CYTOLOGY_CDS_FALLBACK = {
+    "Superficial-Intermediate": {
+        "summary": "Normal squamous cells detected. No immediate action required.",
+        "actions": ["Continue routine screening per national guidelines."],
+    },
+    "Metaplastic": {
+        "summary": "Squamous metaplasia noted. Generally benign but warrants monitoring.",
+        "actions": ["Repeat cytology in 12 months.", "Correlate with clinical findings."],
+    },
+    "Koilocytotic": {
+        "summary": "HPV-associated koilocytic changes detected.",
+        "actions": ["Perform HPV co-testing.", "Consider colposcopy referral if persistent."],
+    },
+    "Dyskeratotic": {
+        "summary": "Dyskeratotic changes detected — potential pre-malignant finding.",
+        "actions": ["Urgent colposcopy referral recommended.", "Correlate with HPV status."],
+    },
+    "Parabasal": {
+        "summary": "Parabasal cells detected — may indicate atrophy or severe change.",
+        "actions": ["Gynecologic evaluation recommended.", "Consider hormonal assessment if postmenopausal."],
+    },
+}
+
+
+def _call_gemini(prompt: str, fallback):
+    """Call Gemini API with retry. Returns parsed JSON on success, fallback on failure."""
+    if not _gemini_client:
+        return fallback
+    import time
+    for attempt in range(3):
+        try:
+            response = _gemini_client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
+                config=genai_types.GenerateContentConfig(
+                    temperature=0.2,
+                    max_output_tokens=1024,
+                    response_mime_type="application/json",
+                    thinking_config=genai_types.ThinkingConfig(thinking_budget=0),
+                ),
+            )
+            result = json.loads(response.text)
+            if isinstance(fallback, dict):
+                assert "summary" in result and "actions" in result
+                assert isinstance(result["actions"], list) and len(result["actions"]) > 0
+            return result
+        except Exception as e:
+            err_str = str(e)
+            if ("503" in err_str or "429" in err_str or "UNAVAILABLE" in err_str) and attempt < 2:
+                print(f"[LLM RETRY] Attempt {attempt+1} failed ({err_str[:80]}), retrying in {2 ** attempt}s...")
+                time.sleep(2 ** attempt)
+                continue
+            print(f"[LLM WARNING] Gemini call failed, using fallback: {e}")
+            return fallback
+
+
+def _generate_llm_cds_cytology(prediction: str, confidence: float, class_probs: dict):
+    """Generate personalised cytology CDS using Gemini LLM."""
+    fallback = CYTOLOGY_CDS_FALLBACK.get(prediction, {
+        "summary": f"Cell class '{prediction}' detected.",
+        "actions": ["Clinical correlation recommended."],
+    })
+
+    probs_str = ", ".join(f"{cls}: {prob*100:.1f}%" for cls, prob in class_probs.items())
+
+    prompt = f"""You are a clinical decision support assistant interpreting Pap smear cytology results.
+
+Cytology Result:
+- Predicted Cell Class: {prediction}
+- Confidence: {confidence * 100:.1f}%
+- All Class Probabilities: {probs_str}
+
+Cell class meanings:
+- Superficial-Intermediate: Normal squamous cells, low concern
+- Metaplastic: Squamous metaplasia, monitor
+- Koilocytotic: HPV-associated changes, requires follow-up
+- Dyskeratotic: Abnormal keratinization, potential pre-malignant changes
+- Parabasal: Deep layer cells, may indicate atrophy or severe dysplasia
+
+Task:
+Provide cytology-specific clinical decision guidance as JSON.
+Follow the Bethesda System for Reporting Cervical Cytology guidelines.
+Do NOT recommend specific medications.
+Personalize based on the cell class, confidence level, and relative probabilities.
+Provide 2–4 actionable recommendations.
+
+Return exactly this JSON format:
+{{
+  "summary": "<1–2 sentence personalised cytology interpretation>",
+  "actions": [
+    "<action 1>",
+    "<action 2>"
+  ]
+}}"""
+
+    return _call_gemini(prompt, fallback)
+
+
+# ── 8. Routes ────────────────────────────────────────────────────────────────
 
 
 @app.route("/health", methods=["GET"])
@@ -342,6 +455,10 @@ def predict_cervical():
         }
         if gradcam_b64:
             response_data["gradcam"] = gradcam_b64
+
+        # Clinical Decision Support (LLM-powered with fallback)
+        cds = _generate_llm_cds_cytology(str(pred), float(probs[pred_idx]), class_probs)
+        response_data["cds_guidance"] = cds
 
         return jsonify(response_data)
 

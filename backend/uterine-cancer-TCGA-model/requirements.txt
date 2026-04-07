@@ -7,3 +7,4 @@ scikit-learn
 shap
 xgboost
 gunicorn
+google-genai>=1.0.0

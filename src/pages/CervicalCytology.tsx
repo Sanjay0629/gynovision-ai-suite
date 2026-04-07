@@ -1,11 +1,11 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Microscope, Loader2, Eye, TrendingUp, Upload, Download } from "lucide-react";
+import { Microscope, Loader2, Eye, TrendingUp, Upload, Download, CheckCircle2 } from "lucide-react";
 import { generateCervicalReport } from "@/utils/generateCervicalReport";
 import PageHeader from "@/components/PageHeader";
 import GlassCard from "@/components/GlassCard";
 import DisclaimerBox from "@/components/DisclaimerBox";
-import ClinicalRecommendation from "@/components/ClinicalRecommendation";
+
 import { Button } from "@/components/ui/button";
 
 /* ------------------------------------------------------------------ */
@@ -18,6 +18,10 @@ interface ClassificationResult {
   classes: string[];
   class_probabilities: Record<string, number>;
   gradcam?: string;
+  cds_guidance?: {
+    summary: string;
+    actions: string[];
+  };
 }
 
 const CELL_TYPE_INFO: Record<string, { color: string; description: string }> = {
@@ -188,6 +192,22 @@ const CervicalCytology = () => {
             })}
           </div>
         </div>
+
+        {/* LLM Clinical Decision Support */}
+        {results.cds_guidance && (
+          <div className="rounded-xl bg-muted/50 p-4 space-y-3">
+            <h4 className="text-sm font-semibold text-foreground">Clinical Decision Support</h4>
+            <p className="text-sm text-muted-foreground">{results.cds_guidance.summary}</p>
+            <ul className="space-y-2">
+              {results.cds_guidance.actions.map((action, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                  {action}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Interpretation + Download */}
         <div className="flex items-center justify-between rounded-lg border border-border/50 bg-muted/30 p-3">
@@ -371,8 +391,7 @@ const CervicalCytology = () => {
               </form>
             </GlassCard>
 
-            {/* Clinical Recommendation below upload */}
-            {results && <ClinicalRecommendation prediction={results.prediction} />}
+            {/* Clinical Recommendation below upload — uses backend LLM CDS now */}
           </div>
 
           {/* Results */}
