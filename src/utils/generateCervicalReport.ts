@@ -10,6 +10,10 @@ interface ReportData {
   patientId?: string;
   patientAge?: string;
   referringPhysician?: string;
+  cds_guidance?: {
+    summary: string;
+    actions: string[];
+  };
 }
 
 const RECOMMENDATIONS: Record<string, { interpretation: string; riskLevel: string; actions: string[] }> = {
@@ -339,10 +343,14 @@ export function generateCervicalReport(data: ReportData) {
   thinDivider();
 
   // ── Clinical Recommendation ──
-  const rec = RECOMMENDATIONS[data.prediction];
-  if (rec) {
+  const hardcodedRec = RECOMMENDATIONS[data.prediction];
+  if (hardcodedRec || data.cds_guidance) {
+    const riskLevelText = hardcodedRec?.riskLevel || "Unknown";
+    const interpretationText = data.cds_guidance?.summary || hardcodedRec?.interpretation || "No interpretation available.";
+    const actionsList = data.cds_guidance?.actions || hardcodedRec?.actions || [];
+
     // Estimate space needed for clinical recommendation section
-    const estimatedRecHeight = 60 + rec.actions.length * 12;
+    const estimatedRecHeight = 60 + actionsList.length * 12;
     if (y + estimatedRecHeight > pageHeight - 30) {
       doc.addPage();
       doc.setFillColor(...COLORS.white);
@@ -353,10 +361,10 @@ export function generateCervicalReport(data: ReportData) {
     sectionTitle("Clinical Recommendation");
 
     // Risk level badge
-    const riskColor = rec.riskLevel === "High" ? COLORS.riskHigh
-      : rec.riskLevel === "Moderate" ? COLORS.riskMod : COLORS.riskLow;
+    const riskColor = riskLevelText === "High" ? COLORS.riskHigh
+      : riskLevelText === "Moderate" ? COLORS.riskMod : COLORS.riskLow;
 
-    labelValue("Risk Level:", rec.riskLevel, riskColor);
+    labelValue("Risk Level:", riskLevelText, riskColor);
     y += 2;
 
     // Interpretation
@@ -369,7 +377,7 @@ export function generateCervicalReport(data: ReportData) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(...COLORS.body);
-    const interpLines = doc.splitTextToSize(rec.interpretation, contentWidth - 4);
+    const interpLines = doc.splitTextToSize(interpretationText, contentWidth - 4);
     doc.text(interpLines, margin + 2, y);
     y += interpLines.length * 4.5 + 5;
 
@@ -380,7 +388,7 @@ export function generateCervicalReport(data: ReportData) {
     doc.text("Recommended Actions", margin + 2, y);
     y += 6;
 
-    for (const action of rec.actions) {
+    for (const action of actionsList) {
       // Check if we need a new page for each action
       if (y + 10 > pageHeight - 30) {
         doc.addPage();

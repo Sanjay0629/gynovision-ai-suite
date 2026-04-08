@@ -25,6 +25,10 @@ export interface MolecularReportData {
   patientAge?: string;
   // Genomic/clinical inputs
   molecularInputs?: Record<string, string | number>;
+  cds_guidance?: {
+    summary: string;
+    actions: string[];
+  };
 }
 
 const COLORS = {
@@ -334,6 +338,47 @@ export function generateMolecularReport(data: MolecularReportData) {
       doc.roundedRect(shapBarX, barY, Math.max(0.5, shapFillWidth), 3, 1.5, 1.5, "F");
 
       y += rowHeight;
+    }
+
+    y += 4;
+    thinDivider();
+  }
+
+  // ── Clinical Decision Support ── (force to next page if needed)
+  if (data.cds_guidance) {
+    ensureSpace(40);
+    sectionTitle("Clinical Decision Support");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.5);
+    doc.setTextColor(...COLORS.heading);
+    doc.text("Summary", margin + 2, y);
+    y += 5;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(...COLORS.body);
+    const summaryLines = doc.splitTextToSize(data.cds_guidance.summary, contentWidth - 4);
+    doc.text(summaryLines, margin + 2, y);
+    y += summaryLines.length * 4.5 + 5;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.5);
+    doc.setTextColor(...COLORS.heading);
+    doc.text("Recommended Actions", margin + 2, y);
+    y += 6;
+
+    for (const action of data.cds_guidance.actions) {
+      ensureSpace(14);
+      doc.setFillColor(...COLORS.primary);
+      doc.circle(margin + 5, y - 1.2, 1.2, "F");
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(...COLORS.body);
+      const actionLines = doc.splitTextToSize(action, contentWidth - 14);
+      doc.text(actionLines, margin + 10, y);
+      y += actionLines.length * 4.5 + 3;
     }
 
     y += 4;
