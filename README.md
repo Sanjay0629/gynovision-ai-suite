@@ -66,7 +66,7 @@ The system is built as a **final-year academic research project** that demonstra
 | **Risk Stratification** | Color-coded Low / Intermediate / High risk tiers with calibrated thresholds |
 | **SHAP Explainability** | Per-prediction feature importance with direction indicators |
 | **Grad-CAM Visualization** | Heatmap overlays showing which image regions drive CNN predictions |
-| **Clinical Decision Support** | Rule-based recommendations tailored to each patient's risk profile |
+| **LLM Decision Support** | Dynamic, Gemini LLM-generated clinical interpretations and actionable advice tailored to each patient's risk profile |
 | **PDF Report Generation** | Downloadable, professionally formatted patient reports from every module |
 | **Modern Dark UI** | Glassmorphism, Framer Motion animations, particle effects, and responsive design |
 | **Modular Backend** | Each model runs as an independent Flask microservice on its own port |
@@ -239,6 +239,7 @@ The platform follows a **decoupled frontend-backend architecture** where the Rea
 | [SHAP](https://shap.readthedocs.io) | SHapley Additive exPlanations |
 | [Pandas](https://pandas.pydata.org) / [NumPy](https://numpy.org) | Data manipulation |
 | [Joblib](https://joblib.readthedocs.io) | Model serialization |
+| [Google Gemini API](https://deepmind.google/technologies/gemini/) | LLM for dynamic clinical recommendations |
 
 ---
 
@@ -482,9 +483,9 @@ Used in the cytology image classification module:
 - Based on *Selvaraju et al., 2017*
 
 ### Clinical Decision Support (CDS)
-Rule-based recommendation engines:
-- **Cervical Clinical**: Guideline-based screening recommendations per risk tier
-- **Uterine Clinical**: Context-aware recommendations considering endometrial thickness, CA-125 levels, bleeding patterns, menopause status, BMI, comorbidities, and family history
+LLM-powered dynamic recommendation engine (integrated Gemini API):
+- Provides real-time clinical interpretations and actionable next steps based on the patient's individual risk profile, test results, and model predictions.
+- **Dynamic & Personalized**: Replaces static rule-based systems with comprehensive, context-aware guidance tailored to the complete clinical picture.
 
 ---
 
@@ -496,7 +497,7 @@ Every AI module supports **downloadable PDF reports** generated entirely client-
 - **Clinical Input Summary** — All submitted form data
 - **Prediction Results** — Risk tier, probability scores, confidence levels
 - **SHAP Explanation** — Top contributing features with direction
-- **Clinical Recommendations** — Actionable guideline-based suggestions
+- **LLM Clinical Recommendations** — Dynamic, AI-generated clinical interpretations and actionable guidance
 - **Grad-CAM Images** — Embedded heatmap visualization (cytology module)
 - **Disclaimer** — Academic research notice
 
