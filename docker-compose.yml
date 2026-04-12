@@ -44,6 +44,8 @@ services:
     container_name: gynovision-cervical-clinical
     ports:
       - "5010:5010"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
     volumes:
       - ./backend/cervical-cancer-clinical-model:/app
     healthcheck:
@@ -64,6 +66,8 @@ services:
     container_name: gynovision-cervical-resnet50
     ports:
       - "5009:5009"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
     volumes:
       - ./backend/cervical-cancer-resnet50-model/models:/app/models:ro
     healthcheck:
@@ -84,6 +88,8 @@ services:
     container_name: gynovision-uterine-tcga
     ports:
       - "5008:5008"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
     volumes:
       - ./backend/uterine-cancer-TCGA-model/model_artifacts:/app/model_artifacts:ro
     healthcheck:
@@ -104,6 +110,8 @@ services:
     container_name: gynovision-uterine-clinical
     ports:
       - "5007:5007"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
     volumes:
       - ./backend/uterine-cancer-model/models:/app/models:ro
     healthcheck:
