@@ -18,6 +18,10 @@
   A full-stack clinical decision support system that integrates <strong>clinical risk prediction</strong>, <strong>TCGA molecular prognostics</strong>, and <strong>deep learning image analysis</strong> into a unified platform for gynecological cancer assessment.
 </p>
 
+<p align="center">
+  <strong>🟢 Live Demo:</strong> <a href="https://gynovision-ai-suite.vercel.app/" target="_blank">https://gynovision-ai-suite.vercel.app/</a>
+</p>
+
 ---
 
 ## 📋 Table of Contents
