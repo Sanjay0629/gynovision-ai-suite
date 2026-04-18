@@ -467,6 +467,7 @@ def predict():
 if __name__ == "__main__":
     print("=" * 60)
     print("  Uterine Cancer TCGA Molecular API")
-    print("  Port: 5008")
+    print("  Port: 7860")
     print("=" * 60)
-    app.run(host="0.0.0.0", port=5008, debug=True)
+    # Hugging Face Spaces requires port 7860
+    app.run(host="0.0.0.0", port=7860, debug=False)

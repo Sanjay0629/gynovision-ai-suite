@@ -451,4 +451,5 @@ if __name__ == "__main__":
     print(f"  Strategy: {thresholds_data.get('best_strategy', 'CW')}")
     print(f"  Low ≤ {LOW_UPPER:.2f}  |  High ≥ {HIGH_LOWER:.2f}")
     print("=" * 60)
-    app.run(host="0.0.0.0", port=5007, debug=True)
+    # Hugging Face Spaces requires port 7860
+    app.run(host="0.0.0.0", port=7860, debug=False)

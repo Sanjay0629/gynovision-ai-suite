@@ -5,3 +5,5 @@ __pycache__/
 .git/
 *.swp
 *.log
+.env
+

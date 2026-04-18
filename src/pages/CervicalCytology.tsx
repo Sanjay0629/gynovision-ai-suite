@@ -36,7 +36,7 @@ const CELL_TYPE_INFO: Record<string, { color: string; description: string }> = {
 /*  API                                                                */
 /* ------------------------------------------------------------------ */
 
-const API_URL = "http://localhost:5009/predict/cervical";
+const API_URL = import.meta.env.VITE_CERVICAL_RESNET_URL || "http://localhost:5009/predict/cervical";
 
 /* ------------------------------------------------------------------ */
 /*  Main Component                                                     */

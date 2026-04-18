@@ -12,7 +12,9 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY model_server.py .
+COPY models/ ./models/
 
-EXPOSE 5009
+# Expose Hugging Face default port
+EXPOSE 7860
 
 CMD ["python", "model_server.py"]

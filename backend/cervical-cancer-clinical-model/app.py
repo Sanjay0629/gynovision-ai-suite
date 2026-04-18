@@ -366,4 +366,5 @@ def predict():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5010, debug=True)
+    # Hugging Face Spaces requires port 7860
+    app.run(host="0.0.0.0", port=7860, debug=False)

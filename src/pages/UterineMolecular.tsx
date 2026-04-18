@@ -55,7 +55,7 @@ const RISK_COLORS: Record<string, string> = {
   High: "#e74c3c",
 };
 
-const API_URL = "http://localhost:5008/predict/uterine-tcga";
+const API_URL = import.meta.env.VITE_UTERINE_TCGA_URL || "http://localhost:5008/predict/uterine-tcga";
 
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */

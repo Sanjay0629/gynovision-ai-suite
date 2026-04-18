@@ -110,7 +110,7 @@ const riskColor = (label: string) => {
 /*  API                                                                */
 /* ------------------------------------------------------------------ */
 
-const API_URL = "http://localhost:5010/predict";
+const API_URL = import.meta.env.VITE_CERVICAL_CLINICAL_URL || "http://localhost:5010/predict";
 
 /* ------------------------------------------------------------------ */
 /*  Main Component                                                     */

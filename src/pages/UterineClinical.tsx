@@ -228,7 +228,7 @@ const ResultsPanel = ({
 /*  Main page component                                                */
 /* ------------------------------------------------------------------ */
 
-const API_URL = "http://localhost:5007/predict/uterine";
+const API_URL = import.meta.env.VITE_UTERINE_CLINICAL_URL || "http://localhost:5007/predict/uterine";
 
 const UterineClinical = () => {
   const [formData, setFormData] = useState(initialFormData);

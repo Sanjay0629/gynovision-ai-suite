@@ -6,7 +6,9 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app.py .
+COPY model_artifacts/ ./model_artifacts/
 
-EXPOSE 5008
+# Expose Hugging Face default port
+EXPOSE 7860
 
 CMD ["python", "app.py"]
